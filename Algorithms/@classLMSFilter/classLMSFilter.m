@@ -1,24 +1,26 @@
 classdef classLMSFilter < matlab.System
     % CLASSLMSFILTER Add summary here
-    
-    %
-    % This template includes most, but not all, possible properties,
-    % attributes, and methods that you can implement for a System object.
 
     % Public, tunable properties
     properties
 
+        % system setup
+        
+
         % adaptive filter tuning
-        stepsize   = 0.1;
+        stepsize   = 0.01;
         leakage    = 0.001;
         smoothing  = 0.999; 
         normweight = 1;
+
+        % switches
+        bfreezecoeffs(1, 1)logical = false;
 
     end
 
     % Public, non-tunable properties
     properties(Nontunable)
-        filterlen (1, 1) {mustBePositive, mustBeInteger} = 32; % default value
+        filterlen(1, 1){mustBePositive, mustBeInteger} = 256; % default value
     end
 
     properties(DiscreteState)
@@ -46,7 +48,7 @@ classdef classLMSFilter < matlab.System
             % Perform one-time calculations, such as computing constants
             obj.states = zeros(obj.filterlen, 1);
             obj.coeffs = zeros(obj.filterlen, 1);
-            obj.powrefhist = zero(1, 1);
+            obj.powrefhist = 0;
         end
 
         function [output, error] = stepImpl(obj, ref, des)
@@ -54,25 +56,27 @@ classdef classLMSFilter < matlab.System
             % discrete states.
 
             % Update state vector
-            obj.state = [ref; obj.state(1:end-1, 1)];
+            obj.states = [ref; obj.states(1:end-1, 1)];
         
             % Get normalized stepsize
-            obj.powrefhist = obj.smoothing * norm(state) + (1 - obj.smoothing) * obj.powrefhist;
+            obj.powrefhist = obj.smoothing * norm(obj.states) + (1 - obj.smoothing) * obj.powrefhist;
             normstepsize   = obj.stepsize / (1 + obj.normweight * obj.powrefhist);
         
             % Get error signal: desired - output
-            output = obj.coeffs.' * obj.state;
-            error  = des - obj.coeffs.' * output;
+            output = obj.coeffs.' * obj.states;
+            error  = des - output;
         
             % Update filter coefficients
-            obj.coeffs = obj.coeffs * (1 - normstepsize * obj.leakage) + normstepsize * error * obj.state;
+            if ~obj.bfreezecoeffs
+                obj.coeffs = obj.coeffs * (1 - normstepsize * obj.leakage) + normstepsize * error * obj.states;
+            end
         end
 
         function resetImpl(obj)
             % Initialize / reset discrete-state properties
             obj.states = zeros(obj.filterlen, 1);
             obj.coeffs = zeros(obj.filterlen, 1);
-            obj.powrefhist = zero(1, 1);
+            obj.powrefhist = 0;
         end
 
         %% Backup/restore functions
