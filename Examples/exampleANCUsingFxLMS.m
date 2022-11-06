@@ -93,22 +93,15 @@ xex    = randn(fs * extime, 1);
 xexfilt = filter(secPathCoef, 1, xex);
 xexfilt = xexfilt + 0.001 * randn(fs * extime, 1); % add sensor self noise
 
+lms = classLMSFilter('stepsize', 0.04, 'leakage', 0.001, 'normweight', 1, 'smoothing', 0.97, 'filterlen', 512);
+
 for i = 1:length(xex)
 
-    % Update state vector
-    secPathEstState = [xex(i, 1); secPathEstState(1:end-1, 1)];
-
-    % Get normalization factor
-    powx = norm(secPathEstState); % TODO: Add exponential filter
-    normstepsize = mu_lms / powx;
-
-    % Get error signal: desired - output
-    error = xexfilt(i, 1) - secPathEstCoef.' * secPathEstState;
-
-    % Update est. secondary path filter coefficients
-    secPathEstCoef = secPathEstCoef * (1 - normstepsize * gamma_lms) + ...
-                                           normstepsize * error * secPathEstState;
+    lms.step(xex(i,1), xexfilt(i,1));
 end
+
+secPathEstCoef = lms.coeffs;
+% release(lms);
 
 %% Noise signal
 
@@ -141,40 +134,38 @@ prinoise = filter(priPathCoef, 1, noise);
 filtLen_fxlms = 256;
 
 % Preallocate memory
-error_fxlms  = zeros(noiseTime * fs, 1);
+save_error_fxlms  = zeros(noiseTime * fs, 1);
 output_fxlms = zeros(noiseTime * fs, 1);
-antinoise    = zeros(noiseTime * fs, 1);
+save_antinoise    = zeros(noiseTime * fs, 1);
 wfiltState   = zeros(filtLen_fxlms, 1);
 wfiltCoef    = zeros(filtLen_fxlms, 1);
 filtRefState = zeros(filtLen_fxlms, 1);
 secPathState = zeros(Ns, 1);
 secPathEstState = zeros(filtLen_lms, 1);
 
+fxlms = classFxLMSFilter('stepsize', 0.04, 'leakage', 0.001, 'normweight', 1, 'smoothing', 0.97);
+
+error_fxlms = 0;
+antinoise   = 0;
+
+fxlms.estSecPathCoeff = squeeze(secPathEstCoef);
 for i = 1:length(noise)
 
-    % Update state vector of W filter and calc antinoise
-    wfiltState = [noise(i); wfiltState(1:end-1, 1)];
-    output_fxlms(i,1) = wfiltCoef.' * wfiltState;
-
-    % Update state vector of actual secondary path and filter antinoise
-    secPathState   = [output_fxlms(i,1); secPathState(1:end-1, 1)];
-    antinoise(i,1) = secPathCoef.' * secPathState;
-
     % Calc error i.e. residual noise
-    error_fxlms(i,1) = prinoise(i,1) - antinoise(i,1);
+    error_fxlms = prinoise(i,1) - antinoise;
+    save_error_fxlms(i) = error_fxlms;
 
-    % Get filtered reference signal
-    secPathEstState = [noise(i,1); secPathEstState(1:end-1, 1)];
-    filtRefOutput   = secPathEstCoef.' * secPathEstState;
-    filtRefState    = [filtRefOutput; filtRefState(1:end-1,1)];
+    % Call FxLMS algorithm
+    output = fxlms(noise(i), error_fxlms); 
 
-    % Normalize stepsize
-    powfiltref   = norm(filtRefState); % TODO: add exponential smoothing
-    normstepsize = mu_fxlms / (1 + normK * powfiltref);
+    % Update state vector of actual secondary path and filter
+    % output to form antinoise
+    secPathState = [output; secPathState(1:end-1, 1)];
 
-    % Update W filter coefficients
-    wfiltCoef = wfiltCoef * (1 - normstepsize * gamma_fxlms) + ...
-                                 normstepsize * error_fxlms(i,1) * filtRefState;
+    % Antinoise at mics
+    antinoise = secPathCoef.' * secPathState;
+    save_antinoise(i) = antinoise;
+
 end
  
 % Calculate frequency domain data
@@ -187,8 +178,8 @@ fftLen  = 2048;
 waitTime = 10; % sec
 
 [psd_prinoise,  fxx] = pwelch(prinoise, winLen, overlap, fftLen, fs);
-[psd_antinoise, ~]   = pwelch(antinoise, winLen, overlap, fftLen, fs);
-[psd_error, ~] = pwelch(error_fxlms(waitTime * fs:end, 1), winLen, overlap, fftLen, fs);
+[psd_antinoise, ~]   = pwelch(save_antinoise, winLen, overlap, fftLen, fs);
+[psd_error, ~] = pwelch(save_error_fxlms(waitTime * fs:end, 1), winLen, overlap, fftLen, fs);
 
 %% Generate all plots
 
@@ -250,7 +241,7 @@ sgtitle('Transfer Function Characteristics');
 
 % Plot for comparison S(z) with S^(z)
 figure(2)
-plot(1:filtLen_lms, secPathEstCoef, 'LineWidth', 1.1); 
+plot(1:filtLen_lms, squeeze(secPathEstCoef), 'LineWidth', 1.1); 
 hold on
 plot(1:filtLen_lms, secPathCoef(1:filtLen_lms), 'LineWidth', 1.1);
 xlabel('Samples'); ylabel('Amplitude');
@@ -268,8 +259,8 @@ txx = (1:noiseTime*fs)/fs;
 figure(3)
 plot(txx, prinoise);
 hold on;
-plot(txx, -antinoise);
-plot(txx, error_fxlms);
+plot(txx, -save_antinoise);
+plot(txx, save_error_fxlms);
 grid on; grid minor;
 xlabel('time [s]'); ylabel('Amplitude');
 legend('Primary Noise', 'Antinoise', 'Residual Noise');
@@ -289,8 +280,8 @@ title('Noise Cancellation Spectrum');
 
 if strcmpi(noiseType, 'rand')
     audiowrite('noiseAncOff_rand.wav', prinoise ./ max(abs(prinoise)), fs);
-    audiowrite('noiseAncOn_rand.wav', error_fxlms ./ max(abs(error_fxlms)), fs);
+    audiowrite('noiseAncOn_rand.wav', save_error_fxlms ./ max(abs(save_error_fxlms)), fs);
 elseif strcmpi(noiseType, 'tonal')
     audiowrite('noiseAncOff_tonal.wav', prinoise ./ max(abs(prinoise)), fs);
-    audiowrite('noiseAncOn_tonal.wav', error_fxlms ./ max(abs(error_fxlms)), fs);
+    audiowrite('noiseAncOn_tonal.wav', save_error_fxlms ./ max(abs(save_error_fxlms)), fs);
 end

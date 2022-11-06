@@ -34,7 +34,7 @@ classdef classLMSFilter < matlab.System
 
     % Pre-computed constants
     properties(Access = private)
-
+        % None
     end
 
     methods
@@ -49,14 +49,7 @@ classdef classLMSFilter < matlab.System
         %% Common functions
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
-
-            % Probably don't need to keep this here since it is in reset()
-            % already
-            obj.states = zeros(obj.filterlen, obj.numRef);
-            obj.coeffs = zeros(obj.numRef, obj.numErr, obj.filterlen);
-            obj.error  = zeros(1, obj.numErr);
-            obj.output = zeros(obj.numErr, obj.numRef);
-            obj.powrefhist = zeros(1, obj.numRef);
+            % None
         end
 
         function stepImpl(obj, ref, des)
@@ -82,7 +75,7 @@ classdef classLMSFilter < matlab.System
 
                 % Get normalized stepsize
                 obj.powrefhist(1, ref) = obj.smoothing * norm(obj.states(:, ref)) + (1 - obj.smoothing) * obj.powrefhist(1, ref);
-                normstepsize = obj.stepsize(1, mic) / (1 + obj.normweight(1, mic) * obj.powrefhist(1, ref));
+                normstepsize = obj.stepsize(1, mic) / (1 + obj.normweight(1, mic) * obj.powrefhist(1, ref)); % This can be optimized to avoid divides
                       
                 % Update filter coefficients using leaky LMS
                 if ~obj.bfreezecoeffs
@@ -99,7 +92,7 @@ classdef classLMSFilter < matlab.System
             obj.states = zeros(obj.filterlen, obj.numRef);
             obj.coeffs = zeros(obj.numRef, obj.numErr, obj.filterlen);
             obj.error  = zeros(1, obj.numErr);
-            obj.output = zeros(1, obj.numRef);
+            obj.output = zeros(obj.numErr, obj.numRef);
             obj.powrefhist = zeros(1, obj.numRef);
         end
 
