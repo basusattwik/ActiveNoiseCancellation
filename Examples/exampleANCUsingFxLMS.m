@@ -143,12 +143,12 @@ filtRefState = zeros(filtLen_fxlms, 1);
 secPathState = zeros(Ns, 1);
 secPathEstState = zeros(filtLen_lms, 1);
 
-fxlms = classFxLMSFilter('stepsize', 0.04, 'leakage', 0.001, 'normweight', 1, 'smoothing', 0.97);
+fxlms = classMimoFxLMSFilter('stepsize', 0.04, 'leakage', 0.001, 'normweight', 1, 'smoothing', 0.97);
 
 error_fxlms = 0;
 antinoise   = 0;
 
-fxlms.estSecPathCoeff = squeeze(secPathEstCoef);
+fxlms.estSecPathCoeff = reshape(secPathEstCoef, [1, 1, filtLen_lms]);
 for i = 1:length(noise)
 
     % Calc error i.e. residual noise
