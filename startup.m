@@ -9,4 +9,4 @@ addpath("Examples/");
 addpath("Generate/");
 addpath("Algorithms/")
 
-disp("ActiveNoiseCancellation: Ready!");
+disp("ActiveNoiseCancellation: Ready to run!");

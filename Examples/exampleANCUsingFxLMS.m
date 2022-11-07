@@ -160,6 +160,7 @@ for i = 1:length(noise)
 
     % Update state vector of actual secondary path and filter
     % output to form antinoise
+    % ToDo: Update to MIMO
     secPathState = [output; secPathState(1:end-1, 1)];
 
     % Antinoise at mics

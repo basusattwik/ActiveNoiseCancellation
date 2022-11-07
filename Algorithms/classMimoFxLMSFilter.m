@@ -70,24 +70,24 @@ classdef classMimoFxLMSFilter < matlab.System
                         estSecPathFiltOutput        = squeeze(obj.estSecPathCoeff(spk, mic, :)).' * obj.estSecPathState(:, ref);
 
                         % Update state vector for filtered reference
-                        obj.filtRefState(ref, spk, mic, :) = [estSecPathFiltOutput ; squeeze(obj.filtRefState(ref, spk, mic, 1:end-1))];
+                        obj.filtRefState(:, ref, spk, mic) = [estSecPathFiltOutput ; squeeze(obj.filtRefState(1:end-1, ref, spk, mic))];
 
                         % Normalize stepsize
-                        obj.powRefHist(1, ref) = obj.smoothing * norm(squeeze(obj.filtRefState(ref, spk, mic, :))) ...
+                        obj.powRefHist(1, ref) = obj.smoothing * norm(squeeze(obj.filtRefState(:, ref, spk, mic))) ...
                                                                + (1 - obj.smoothing) * obj.powRefHist(1, ref);
                         normstepsize = obj.stepsize / (1 + obj.normweight * obj.powRefHist(1, ref));
 
                         % Update filter coefficients using leaky LMS
                         if ~obj.bfreezecoeffs
-                            obj.filterCoeff(spk, mic, :) = squeeze(obj.filterCoeff(spk, mic, :)) * (1 - normstepsize * obj.leakage) ...
-                                                                  + normstepsize * error(1, mic) * squeeze(obj.filtRefState(ref, spk, mic, :));
+                            obj.filterCoeff(:, ref, spk) = squeeze(obj.filterCoeff(:, ref, spk)) * (1 - normstepsize * obj.leakage) ...
+                                                                  + normstepsize * error(1, mic) * squeeze(obj.filtRefState(:, ref, spk, mic));
                         end
 
                         % Update state vector of adaptive filter
-                        obj.filterState(:, ref)  = [input(1, ref) ; obj.filterState(1:end-1, ref)]; % ToDo: Can go outside loops
+                        obj.filterState(:, ref) = [input(1, ref) ; obj.filterState(1:end-1, ref)]; % ToDo: Can go outside loops
             
                         % Get output signal
-                        output = output + squeeze(obj.filterCoeff(ref, spk, :)).' * obj.filterState(:, ref);
+                        output = output + squeeze(obj.filterCoeff(:, ref, spk)).' * obj.filterState(:, ref);
 
                     end % mic loop
                 end % spk loop
@@ -96,9 +96,9 @@ classdef classMimoFxLMSFilter < matlab.System
 
         function resetImpl(obj)
             % Initialize / reset discrete-state properties
-            obj.filterCoeff     = zeros(obj.numRef, obj.numSpk, obj.filterLen);       % adaptive FIR filter coefficients
+            obj.filterCoeff     = zeros(obj.filterLen, obj.numRef, obj.numSpk);       % adaptive FIR filter coefficients
             obj.filterState     = zeros(obj.filterLen, obj.numRef);                   % buffered reference signal
-            obj.filtRefState    = zeros(obj.numRef, obj.numSpk, obj.numMic, obj.estSecPathFilterLen); % buffered sec path filtered reference signal
+            obj.filtRefState    = zeros(obj.estSecPathFilterLen, obj.numRef, obj.numSpk, obj.numMic); % buffered sec path filtered reference signal
             obj.estSecPathState = zeros(obj.estSecPathFilterLen, obj.numRef); % buffered reference signal for sec path filter
             obj.powRefHist      = zeros(1, obj.numRef); % smoothed power of reference signal
         end
