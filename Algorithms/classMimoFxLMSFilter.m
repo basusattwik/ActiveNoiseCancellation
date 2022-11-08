@@ -34,8 +34,7 @@ classdef classMimoFxLMSFilter < matlab.System
     properties(DiscreteState)
         filterCoeff;     % adaptive FIR filter coefficients
         filterState;     % buffered reference signal        
-        gradient;        % gradient vector per ref x spk x mic
-        totalGradient;
+        gradient;        % gradient vector per ref x spk
         estSecPathState; % buffered reference signal for sec path filter
         filtRefState;    % buffered sec path filtered reference signal
         powRefHist;      % smoothed power of reference signal
@@ -81,11 +80,11 @@ classdef classMimoFxLMSFilter < matlab.System
                         obj.filtRefState(:, ref, spk, mic) = [estSecPathFiltOutput ; squeeze(obj.filtRefState(1:end-1, ref, spk, mic))];
 
                         % Get power of filtered reference 
-                        obj.powRefHist(1, ref, spk, mic) = obj.smoothing * norm(squeeze(obj.filtRefState(:, ref, spk, mic))) ...
-                                                                         + (1 - obj.smoothing) * obj.powRefHist(1, ref, spk, mic);
+                        obj.powRefHist(ref, spk, mic) = obj.smoothing * norm(squeeze(obj.filtRefState(:, ref, spk, mic))) ...
+                                                                         + (1 - obj.smoothing) * obj.powRefHist(ref, spk, mic);
                       
-                        % Get all gradient
-                        obj.gradient(:, ref, spk, mic) = error(1, mic) * squeeze(obj.filtRefState(:, ref, spk, mic));
+                        % Get total gradient
+                        obj.gradient(:, ref, spk) = obj.gradient(:, ref, spk) + error(1, mic) * squeeze(obj.filtRefState(:, ref, spk, mic));
 
                     end % mic loop
 
@@ -93,14 +92,11 @@ classdef classMimoFxLMSFilter < matlab.System
                     if ~obj.bfreezecoeffs
 
                         % Get normalized stepsize
-                        normstepsize = obj.stepsize / (1 + obj.normweight * mean(obj.powRefHist, 4));
-
-                        % Sum gradients over all mics
-                        obj.totalGradient = sum(obj.gradient, 4);
+                        normstepsize = obj.stepsize / (1 + obj.normweight * mean(obj.powRefHist, 3));
 
                         % Update filter coefficients
                         obj.filterCoeff(:, ref, spk) = squeeze(obj.filterCoeff(:, ref, spk)) * (1 - normstepsize * obj.leakage) ...
-                                                                                             + normstepsize * squeeze(obj.totalGradient(:, ref, spk));
+                                                                                             + normstepsize * squeeze(obj.gradient(:, ref, spk));
                     end
                 end % spk loop
             end % ref loop
@@ -116,13 +112,12 @@ classdef classMimoFxLMSFilter < matlab.System
 
         function resetImpl(obj)
             % Initialize / reset discrete-state properties
-            obj.filterCoeff     = zeros(obj.filterLen, obj.numRef, obj.numSpk);       % adaptive FIR filter coefficients
+            obj.filterCoeff     = zeros(obj.filterLen, obj.numRef, obj.numSpk);       % adaptive FIR filter coefficients ref x spk
             obj.filterState     = zeros(obj.filterLen, obj.numRef);                   % buffered reference signal
-            obj.gradient        = zeros(obj.filterLen, obj.numRef, obj.numSpk, obj.numMic); % gradient vector per ref x spk x mic
-            obj.totalGradient   = zeros(obj.filterLen, obj.numRef, obj.numSpk);
-            obj.filtRefState    = zeros(obj.estSecPathFilterLen, obj.numRef, obj.numSpk, obj.numMic); % buffered sec path filtered reference signal
-            obj.estSecPathState = zeros(obj.estSecPathFilterLen, obj.numRef);   % buffered reference signal for sec path filter
-            obj.powRefHist      = zeros(1, obj.numRef, obj.numSpk, obj.numMic); % smoothed power of reference signal
+            obj.gradient        = zeros(obj.filterLen, obj.numRef, obj.numSpk);       % gradient vector ref x spk
+            obj.filtRefState    = zeros(obj.filterLen, obj.numRef, obj.numSpk, obj.numMic); % buffered sec path filtered reference signal
+            obj.estSecPathState = zeros(obj.estSecPathFilterLen, obj.numRef);         % buffered reference signal for sec path filter
+            obj.powRefHist      = zeros(obj.numRef, obj.numSpk, obj.numMic);          % smoothed power of reference signal
         end
 
     end
