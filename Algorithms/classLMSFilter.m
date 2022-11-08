@@ -66,7 +66,7 @@ classdef classLMSFilter < matlab.System
             for mic = 1:obj.numErr
                 for ref = 1:obj.numRef
                 
-                % Get error signal: desired - output
+                % Get error signal: desired - output % ToDo: Can move to outer loop
                 obj.error(1, mic) = des(1, mic) - sum(obj.output(mic, :));
 
                 % Get normalized stepsize

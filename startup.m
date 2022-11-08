@@ -6,7 +6,7 @@ clc
 
 % Add all folders to path
 addpath("Examples/");
-addpath("Generate/");
+addpath(genpath("Generate/"));
 addpath("Algorithms/")
 
 disp("ActiveNoiseCancellation: Ready to run!");
