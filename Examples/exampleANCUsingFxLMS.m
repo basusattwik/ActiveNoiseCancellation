@@ -7,7 +7,7 @@ clc
 %% Define sim constants
 
 fs = 6000; % 6 kHz sampling rate
-noiseType = 'rand';
+noiseType = 'tonal';
 
 %% Algorithm Tuning
 
@@ -93,7 +93,7 @@ xex    = randn(fs * extime, 1);
 xexfilt = filter(secPathCoef, 1, xex);
 xexfilt = xexfilt + 0.001 * randn(fs * extime, 1); % add sensor self noise
 
-lms = classLMSFilter('stepsize', 0.04, 'leakage', 0.001, 'normweight', 1, 'smoothing', 0.97, 'filterlen', 512);
+lms = classLMSFilter('stepsize', 0.04, 'leakage', 0.001, 'normweight', 1, 'smoothing', 0.97, 'filterlen', 300);
 
 for i = 1:length(xex)
 
@@ -143,7 +143,7 @@ filtRefState = zeros(filtLen_fxlms, 1);
 secPathState = zeros(Ns, 1);
 secPathEstState = zeros(filtLen_lms, 1);
 
-fxlms = classMimoFxLMSFilter('stepsize', mu_fxlms, 'leakage', gamma_fxlms, 'normweight', normK, 'smoothing', 0.97, 'estSecPathCoeff', reshape(secPathEstCoef, [1, 1, filtLen_lms]));
+fxlms = classMimoFxLMSFilter('stepsize', mu_fxlms, 'leakage', gamma_fxlms, 'normweight', normK, 'smoothing', 0.97, 'estSecPathCoeff', reshape(secPathEstCoef, [1, 1, filtLen_lms]), 'filterLen', 300, 'estSecPathFilterLen', 300);
 % fxlms = classFxLMSFilter('stepsize', 0.02, 'leakage', 0.001, 'normweight', 1, 'smoothing', 0.97, 'estSecPathCoeff', squeeze(secPathEstCoef));
 
 error_fxlms = 0;

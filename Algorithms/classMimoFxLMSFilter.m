@@ -59,12 +59,11 @@ classdef classMimoFxLMSFilter < matlab.System
         function output = stepImpl(obj, input, error) % inputs should be ref and err
             % Implement MIMO FxLMS algorithm. 
        
+            % Update state vector of adaptive filter and estimated sec path filter
+            obj.estSecPathState = [input ; obj.estSecPathState(1:end-1, :)]; 
+            obj.filterState     = [input ; obj.filterState(1:end-1, :)];
+            
             for ref = 1:obj.numRef             
-
-                % Update state vector of adaptive filter and estimated sec path filter
-                obj.estSecPathState(:, ref) = [input(1, ref) ; obj.estSecPathState(1:end-1, ref)]; 
-                obj.filterState(:, ref)     = [input(1, ref) ; obj.filterState(1:end-1, ref)];
-
                 for spk = 1:obj.numSpk           
                     for mic = 1:obj.numMic
 
@@ -82,23 +81,18 @@ classdef classMimoFxLMSFilter < matlab.System
                         obj.gradient(:, ref, spk) = obj.gradient(:, ref, spk) + error(1, mic) * squeeze(obj.filtRefState(:, ref, spk, mic));
 
                     end % mic loop
-
-                    % Leaky LMS
-                    if ~obj.bfreezecoeffs
-
-                        % Get normalized stepsize
-                        normstepsize = obj.stepsize / (1 + obj.normweight * mean(obj.powRefHist, 3));
-
-                        % Update filter coefficients
-                        obj.filterCoeff(:, ref, spk) = squeeze(obj.filterCoeff(:, ref, spk)) * (1 - normstepsize * obj.leakage) ...
-                                                                                             + normstepsize * squeeze(obj.gradient(:, ref, spk));
-                    end
-
                 end % spk loop
             end % ref loop
 
-            % Clear gradients
-            obj.gradient(:) = 0;
+            % Leaky LMS
+            if ~obj.bfreezecoeffs
+
+                % Get normalized stepsize
+                normstepsize = obj.stepsize / (1 + obj.normweight * mean(obj.powRefHist, 3));
+
+                % Update filter coefficients
+                obj.filterCoeff = obj.filterCoeff * (1 - normstepsize * obj.leakage) + normstepsize * obj.gradient;
+            end
 
             % Get total output for all speakers
             output = zeros(1, obj.numSpk);
@@ -107,6 +101,9 @@ classdef classMimoFxLMSFilter < matlab.System
                     output(1, spk) = output(1, spk) + squeeze(obj.filterCoeff(:, ref, spk)).' * obj.filterState(:, ref);
                 end
             end
+
+            % Clear gradients
+            obj.gradient(:) = 0;
         end 
 
         function resetImpl(obj)
