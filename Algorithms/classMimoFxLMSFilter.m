@@ -56,11 +56,6 @@ classdef classMimoFxLMSFilter < matlab.System
     methods(Access = protected)
         %% Common functions
 
-        function setupImpl(obj, estSecPath)
-            % Perform one-time calculations, such as computing constants
-            obj.estSecPathCoeff = estSecPath;
-        end
-
         function output = stepImpl(obj, input, error) % inputs should be ref and err
             % Implement MIMO FxLMS algorithm. 
        
@@ -98,8 +93,12 @@ classdef classMimoFxLMSFilter < matlab.System
                         obj.filterCoeff(:, ref, spk) = squeeze(obj.filterCoeff(:, ref, spk)) * (1 - normstepsize * obj.leakage) ...
                                                                                              + normstepsize * squeeze(obj.gradient(:, ref, spk));
                     end
+
                 end % spk loop
             end % ref loop
+
+            % Clear gradients
+            obj.gradient(:) = 0;
 
             % Get total output for all speakers
             output = zeros(1, obj.numSpk);

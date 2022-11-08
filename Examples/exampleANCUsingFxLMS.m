@@ -6,13 +6,13 @@ clc
 
 %% Define sim constants
 
-fs = 16000; % 16 kHz sampling rate
-noiseType = 'tonal';
+fs = 6000; % 6 kHz sampling rate
+noiseType = 'rand';
 
 %% Algorithm Tuning
 
 if strcmpi(noiseType, 'rand')
-    mu_fxlms    = 0.025; % for rand
+    mu_fxlms    = 0.001; % for rand
     gamma_fxlms = 0.001;
     normK = 0.001;
 
@@ -30,8 +30,8 @@ end
 %                                %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Np     = 800;  % Length of primary path filters: 0.05 sec
-flow   = 50;   % Lower band-edge: 80 Hz
+Np     = 300;  % Length of primary path filters: 0.05 sec
+flow   = 80;   % Lower band-edge: 80 Hz
 fhigh  = 1000; % Upper band-edge: 4000 Hz
 delayP = 20;   % Delay before first peak
 Ast    = 20;   % 20 dB stopband attenuation
@@ -45,8 +45,8 @@ priPathCoef = genBandPassTransferFunction(Np, flow, fhigh, delayP, Ast, ford, fs
 %                                  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Ns     = 800;  % Length of secondary path filters: 0.05 sec
-flow   = 20;   % Lower band-edge: 80 Hz
+Ns     = 300;  % Length of secondary path filters: 0.05 sec
+flow   = 40;   % Lower band-edge: 80 Hz
 fhigh  = 2000; % Upper band-edge: 1200 Hz
 delayS = 14;   % Delay before first peak
 Ast    = 20;   % 20 dB stopband attenuation
@@ -79,7 +79,7 @@ secPathPhs = angle(secPathFft(1:nfft/2+1));
 
 mu_lms      = 0.01;
 gamma_lms   = 0.001;
-filtLen_lms = 512;
+filtLen_lms = 300;
 
 % Preallocate zeros
 secPathEstCoef  = zeros(filtLen_lms, 1);
@@ -143,12 +143,14 @@ filtRefState = zeros(filtLen_fxlms, 1);
 secPathState = zeros(Ns, 1);
 secPathEstState = zeros(filtLen_lms, 1);
 
-fxlms = classMimoFxLMSFilter('stepsize', 0.04, 'leakage', 0.001, 'normweight', 1, 'smoothing', 0.97);
+fxlms = classMimoFxLMSFilter('stepsize', mu_fxlms, 'leakage', gamma_fxlms, 'normweight', normK, 'smoothing', 0.97, 'estSecPathCoeff', reshape(secPathEstCoef, [1, 1, filtLen_lms]));
+% fxlms = classFxLMSFilter('stepsize', 0.02, 'leakage', 0.001, 'normweight', 1, 'smoothing', 0.97, 'estSecPathCoeff', squeeze(secPathEstCoef));
 
 error_fxlms = 0;
 antinoise   = 0;
 
-fxlms.estSecPathCoeff = reshape(secPathEstCoef, [1, 1, filtLen_lms]);
+% fxlms.estSecPathCoeff = reshape(secPathEstCoef, [1, 1, filtLen_lms]);
+% fxlms.reset();
 for i = 1:length(noise)
 
     % Calc error i.e. residual noise
