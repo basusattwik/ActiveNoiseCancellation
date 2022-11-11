@@ -4,9 +4,12 @@ close all
 clearvars
 clc
 
-% Add all folders to path
-addpath("Examples/");
-addpath(genpath("Generate/"));
-addpath("Algorithms/")
+% Add subfolders to MATLAB path
+folders = {'Examples', 'Generate', 'Algorithms', 'External'};
+
+numFolders = numel(folders);
+for i = 1:numFolders 
+    addpath(genpath(folders{i}));
+end
 
 disp("ActiveNoiseCancellation: Ready to run!");

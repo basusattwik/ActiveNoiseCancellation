@@ -5,9 +5,9 @@ classdef classMimoFxLMSFilter < matlab.System
     properties
 
         % system setup
-        numRef = 1;
-        numMic = 1;
-        numSpk = 1;
+        numRef = 2;
+        numErr = 2;
+        numSpk = 2;
 
         % adaptive filter tuning
         stepsize   = 0.01;  % adaptive filter stepsize
@@ -65,7 +65,7 @@ classdef classMimoFxLMSFilter < matlab.System
             
             for ref = 1:obj.numRef             
                 for spk = 1:obj.numSpk           
-                    for mic = 1:obj.numMic
+                    for mic = 1:obj.numErr
 
                         % Get filtered reference signal
                         estSecPathFiltOutput = squeeze(obj.estSecPathCoeff(spk, mic, :)).' * obj.estSecPathState(:, ref);
@@ -74,9 +74,9 @@ classdef classMimoFxLMSFilter < matlab.System
                         obj.filtRefState(:, ref, spk, mic) = [estSecPathFiltOutput ; squeeze(obj.filtRefState(1:end-1, ref, spk, mic))];
 
                         % Get power of filtered reference 
-                        obj.powRefHist(ref, spk, mic) = obj.smoothing * norm(squeeze(obj.filtRefState(:, ref, spk, mic))) ...
-                                                                         + (1 - obj.smoothing) * obj.powRefHist(ref, spk, mic);
-                      
+                        obj.powRefHist(ref, spk, mic) = obj.smoothing * sum(squeeze(obj.filtRefState(:, ref, spk, mic)).^2) ...
+                                                                      + (1 - obj.smoothing) * obj.powRefHist(ref, spk, mic);  
+
                         % Get total gradient
                         obj.gradient(:, ref, spk) = obj.gradient(:, ref, spk) + error(1, mic) * squeeze(obj.filtRefState(:, ref, spk, mic));
 
@@ -86,9 +86,8 @@ classdef classMimoFxLMSFilter < matlab.System
 
             % Leaky LMS
             if ~obj.bfreezecoeffs
-
                 % Get normalized stepsize
-                normstepsize = obj.stepsize / (1 + obj.normweight * mean(obj.powRefHist, 3));
+                normstepsize = obj.stepsize; % ToDo: Figure out normalization 1 / (1 + obj.normweight * obj.powRefHist(ref, spk, mic));
 
                 % Update filter coefficients
                 obj.filterCoeff = obj.filterCoeff * (1 - normstepsize * obj.leakage) + normstepsize * obj.gradient;
@@ -111,9 +110,9 @@ classdef classMimoFxLMSFilter < matlab.System
             obj.filterCoeff     = zeros(obj.filterLen, obj.numRef, obj.numSpk);       % adaptive FIR filter coefficients ref x spk
             obj.filterState     = zeros(obj.filterLen, obj.numRef);                   % buffered reference signal
             obj.gradient        = zeros(obj.filterLen, obj.numRef, obj.numSpk);       % gradient vector ref x spk
-            obj.filtRefState    = zeros(obj.filterLen, obj.numRef, obj.numSpk, obj.numMic); % buffered sec path filtered reference signal
+            obj.filtRefState    = zeros(obj.filterLen, obj.numRef, obj.numSpk, obj.numErr); % buffered sec path filtered reference signal
             obj.estSecPathState = zeros(obj.estSecPathFilterLen, obj.numRef);         % buffered reference signal for sec path filter
-            obj.powRefHist      = zeros(obj.numRef, obj.numSpk, obj.numMic);          % smoothed power of reference signal
+            obj.powRefHist      = zeros(obj.numRef, obj.numSpk, obj.numErr);          % smoothed power of reference signal
         end
 
     end
