@@ -56,12 +56,12 @@ classdef classMimoFxLMSFilter < matlab.System
     methods(Access = protected)
         %% Common functions
 
-        function output = stepImpl(obj, input, error) % inputs should be ref and err
+        function output = stepImpl(obj, reference, error) % inputs should be ref and err
             % Implement MIMO FxLMS algorithm. 
        
             % Update state vector of adaptive filter and estimated sec path filter
-            obj.estSecPathState = [input ; obj.estSecPathState(1:end-1, :)]; 
-            obj.filterState     = [input ; obj.filterState(1:end-1, :)];
+            obj.estSecPathState = [reference ; obj.estSecPathState(1:end-1, :)]; 
+            obj.filterState     = [reference ; obj.filterState(1:end-1, :)];
             
             for ref = 1:obj.numRef             
                 for spk = 1:obj.numSpk           

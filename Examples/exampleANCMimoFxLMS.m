@@ -2,78 +2,72 @@ close all
 clearvars
 clc
 
-%% Define sim constants
+%% Setup
 
-% System setup
-numSrc = 1; % Number of sources
-numRef = 2; % Number of reference mics
-numSpk = 2; % Number of antinoise speakers
-numErr = 2; % Number of error mics
-
-fs = 6000; % 6 kHz sampling rate
+fs = 4000; % 4 kHz sampling rate
 noiseType = 'tonal';
 boolMeasureSecPath = false;
 
-%% Algorithm Tuning
+stepFxlms = 20;
+leakFxlms = 0.00001;
+normK     = 0.01;
+numIrTaps = 200;
+noiseTime = 30; % sec
 
-if strcmpi(noiseType, 'rand')
-    muFxlms    = 0.1; % for rand
-    gammaFxlms = 0.001;
-    normK = 0.001;
-
-elseif strcmpi(noiseType, 'tonal')
-    muFxlms    = 0.9;
-    gammaFxlms = 0.00001;
-    normK = 0.01;
-end
 
 %% Create Transfer Functions
 
 disp('Generating Room Impulse Responses...');
 
-roomDim = [4, 3, 2];                % Room dimensions [x y z] (m)
-source  = [2, 3.5, 2];              % Source position   [x y z] (m)
-refMics = [3, 0.1, 2; 3, 0.1, 2.1]; % Reference mic position [x y z] (m)
-errMics = [3, 1.5, 2; 3, 1.8, 2];   % Error mic position [x y z] (m)
-speaker = [3, 3.5, 2; 3, 3.8, 2.1]; % Speaker position [x y z] (m)
-numTaps = 300;                      % Number of samples
-soundSpeed = 340;                   % Speed of sound in (m/s)
-reverbTime = 0.1;                   % Reverberation time (s)
+roomDim  = [4, 3, 2];                % Room dimensions    [x y z] (m)
+sources  = [2, 3.5, 2];              % Source position    [x y z] (m)
+refmics  = [3, 0.1, 2; 3, 0.1, 2.1]; % Reference mic position [x y z] (m)
+errmics  = [3, 1.5, 2; 3, 1.8, 2];   % Error mic position [x y z] (m)
+speakers = [3, 3.5, 2; 3, 3.8, 2];   % Speaker position   [x y z] (m)
+numtaps    = 300;                    % Number of samples
+soundspeed = 340;                    % Speed of sound in (m/s)
+reverbtime = 0.1;                    % Reverberation time (s)
 
 % Primary Paths: Source to Error Mics
-priPathParams.fs = fs;
-priPathParams.srcPos = source;           
-priPathParams.micPos = errMics;          
-priPathParams.c    = soundSpeed;         
-priPathParams.beta = reverbTime;         
-priPathParams.n = numTaps;                  
-priPathParams.L = roomDim;             
+priPathParams.fs     = fs;
+priPathParams.srcPos = sources;           
+priPathParams.micPos = errmics;          
+priPathParams.c      = soundspeed;         
+priPathParams.beta   = reverbtime;         
+priPathParams.n      = numtaps;                  
+priPathParams.L      = roomDim;             
 
-priPathFilters = genRirFilters(priPathParams);
+priPathFilt = genRirFilters(priPathParams);
 
 % Secondary Paths: Speakers to Error Mics
-secPathParams.fs = fs;
-secPathParams.srcPos = speaker; 
-secPathParams.micPos = errMics; 
-secPathParams.c    = soundSpeed;         
-secPathParams.beta = reverbTime;         
-secPathParams.n = numTaps;                  
-secPathParams.L = roomDim;             
+secPathParams.fs     = fs;
+secPathParams.srcPos = speakers; 
+secPathParams.micPos = errmics; 
+secPathParams.c      = soundspeed;         
+secPathParams.beta   = reverbtime;         
+secPathParams.n      = numtaps;                  
+secPathParams.L      = roomDim;             
 
-secPathFilters = genRirFilters(secPathParams);
+secPathFilt = genRirFilters(secPathParams);
 
 % Reference Paths: Source to Reference Mics
-refPathParams.fs = fs;
-refPathParams.srcPos = source;  
-refPathParams.micPos = refMics; 
-refPathParams.c    = soundSpeed;         
-refPathParams.beta = reverbTime;         
-refPathParams.n = numTaps;                  
-refPathParams.L = roomDim;             
+refPathParams.fs     = fs;
+refPathParams.srcPos = sources;  
+refPathParams.micPos = refmics; 
+refPathParams.c      = soundspeed;         
+refPathParams.beta   = reverbtime;         
+refPathParams.n      = numtaps;                  
+refPathParams.L      = roomDim;             
 
-refPathFilters = genRirFilters(refPathParams);
+refPathFilt = genRirFilters(refPathParams);
 
 %% Estimate Secondary Path
+
+% System setup
+numSrc = size(sources,  1);  % Number of sources
+numRef = size(refmics,  1);  % Number of reference mics
+numSpk = size(speakers, 1);  % Number of antinoise speakers
+numErr = size(errmics,  1);  % Number of error mics
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %                      %
@@ -81,13 +75,11 @@ refPathFilters = genRirFilters(refPathParams);
 %                      %
 %%%%%%%%%%%%%%%%%%%%%%%%
 
-numIrTaps = 200;
-
 if ~boolMeasureSecPath
     secPathEstCoef = zeros(numSpk, numErr, numIrTaps);
     for spk = 1:numSpk
         for err = 1:numErr
-            secPathEstCoef(spk, err, :) = secPathFilters{spk, err}.Numerator(1:numIrTaps);
+            secPathEstCoef(spk, err, :) = secPathFilt{spk, err}.Numerator(1:numIrTaps);
         end
     end
 else
@@ -98,14 +90,15 @@ else
     
     % Setup LMS system object
     lmsSysObj = classLMSFilter('numSpk', numSpk, 'numErr', numErr, 'stepsize', 0.04, 'leakage', 0.001, 'normweight', 1, 'smoothing', 0.97, 'filterlen', numIrTaps);
+    
+    % Adaptively estimate secondary paths
     xexfilt = zeros(1, numErr);
-
     for i = 1:length(randNoise)
     
         % Simulate secondary path
         for err = 1:numErr
             for spk = 1:numSpk
-                xexfilt(1, err) = xexfilt(1, err) + secPathFilters{spk, err}(randNoise(i, spk));
+                xexfilt(1, err) = xexfilt(1, err) + secPathFilt{spk, err}(randNoise(i, spk));
             end
         end
     
@@ -118,14 +111,13 @@ end
 
 %% Noise signal
 
-% Create filtered primary noise
-noiseTime = 30; % sec
-
+% Create primary noise at the source
 if strcmpi(noiseType, 'rand')
     noise = 0.1 * randn(noiseTime * fs, 1);
 
 elseif strcmpi(noiseType, 'tonal')
-    f0 = 100;
+
+    f0 = 150;
     t  = 0:1/fs:(noiseTime)-1/fs;
     A  = [.01 .02 .02];
     k  = 1:length(A);
@@ -133,7 +125,8 @@ elseif strcmpi(noiseType, 'tonal')
     f  = 100 * k;
     phase = rand(1, length(A)); % Random initial phase
     
-    noise = zeros(length(t), 1);
+    sigLen = length(t);
+    noise = zeros(sigLen, 1);
     for i = 1:length(A)
         noise = noise + A(i) * sin(2*pi*f(i)*t + phase(i)).';
     end
@@ -148,33 +141,35 @@ saveError      = zeros(noiseTime * fs, numErr);
 outputFxlms    = zeros(noiseTime * fs, numSpk);
 saveAntinoise  = zeros(noiseTime * fs, numErr);
 savePrinoise   = zeros(noiseTime * fs, numErr);
-saveReference  = zeros(noiseTime * fs, numErr);
-prinoiseFxlms  = zeros(1, numErr);
+saveReference  = zeros(noiseTime * fs, numRef);
+primaryFxlms   = zeros(1, numErr);
 errorFxlms     = zeros(1, numErr);
 antinoiseFxlms = zeros(1, numErr);
-referenceFxlms = zeros(1, numErr);
+referenceFxlms = zeros(1, numRef);
 
 % Setup FxLMS system object
-fxlmsSysObj = classMimoFxLMSFilter('numRef', numRef, 'numErr', numErr, 'numSpk', numSpk, 'stepsize', muFxlms, 'leakage', gammaFxlms, 'normweight', normK, 'smoothing', 0.97, 'estSecPathCoeff', secPathEstCoef, 'filterLen', 200, 'estSecPathFilterLen', numIrTaps);
+fxlmsSysObj = classMimoFxLMSFilter('numRef', numRef, 'numErr', numErr, 'numSpk', numSpk, 'stepsize', stepFxlms, 'leakage', leakFxlms, ...
+                                   'normweight', normK, 'smoothing', 0.97, 'estSecPathCoeff', secPathEstCoef, 'filterLen', 200, ...
+                                   'estSecPathFilterLen', numIrTaps);
 
-for i = 1:length(noise)
+for i = 1:sigLen
 
     % Simulate primary noise
     for err = 1:numErr
         for src = 1:numSrc
-            prinoiseFxlms(1, err) = prinoiseFxlms(1, err) + priPathFilters{src, err}(noise(i, 1));
+            primaryFxlms(1, err) = primaryFxlms(1, err) + priPathFilt{src, err}(noise(i, 1));
         end
     end
-    savePrinoise(i, :) = prinoiseFxlms;
+    savePrinoise(i, :) = primaryFxlms;
 
     % Calc error i.e. residual noise
-    errorFxlms = prinoiseFxlms - antinoiseFxlms;
+    errorFxlms = primaryFxlms - antinoiseFxlms;
     saveError(i, :) = errorFxlms;
 
     % Simulate reference path acoustics
     for ref = 1:numRef
         for src = 1:numSrc
-            referenceFxlms(1, ref) = referenceFxlms(1, ref) + refPathFilters{src, ref}(noise(i, 1));
+            referenceFxlms(1, ref) = referenceFxlms(1, ref) + refPathFilt{src, ref}(noise(i, 1));
         end
     end
     saveReference(i, :) = referenceFxlms;
@@ -186,16 +181,18 @@ for i = 1:length(noise)
     antinoiseFxlms(:) = 0; 
     for err = 1:numErr
         for spk = 1:numSpk
-            antinoiseFxlms(1, err) = antinoiseFxlms(1, err) + secPathFilters{spk, err}(outputFxlms(1, spk));
+            antinoiseFxlms(1, err) = antinoiseFxlms(1, err) + secPathFilt{spk, err}(outputFxlms(1, spk));
         end
     end
     saveAntinoise(i, :) = antinoiseFxlms;
 
     % Clear values
-    prinoiseFxlms(:)  = 0;    
+    primaryFxlms(:)   = 0;    
     referenceFxlms(:) = 0;
 end
- 
+
+%% Generate all plots
+
 % Calculate frequency domain data
 winLen  = 1024;
 overlap = 512;
@@ -205,11 +202,9 @@ fftLen  = 2048;
 % convergence
 waitTime = 10; % sec
 
-[psd_prinoise,  fxx] = pwelch(prinoiseFxlms, winLen, overlap, fftLen, fs);
+[psd_prinoise,  fxx] = pwelch(primaryFxlms, winLen, overlap, fftLen, fs);
 [psd_antinoise, ~]   = pwelch(saveAntinoise, winLen, overlap, fftLen, fs);
 [psd_error, ~] = pwelch(saveError(waitTime * fs:end, 1), winLen, overlap, fftLen, fs);
-
-%% Generate all plots
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                %
@@ -285,7 +280,7 @@ title('Comparison of Estimated vs Actual Sec. Path IRs');
 
 txx = (1:noiseTime*fs)/fs;
 figure(3)
-plot(txx, prinoiseFxlms);
+plot(txx, primaryFxlms);
 hold on;
 plot(txx, -saveAntinoise);
 plot(txx, saveError);
@@ -307,9 +302,9 @@ title('Noise Cancellation Spectrum');
 %% Write Audio to disk
 
 if strcmpi(noiseType, 'rand')
-    audiowrite('noiseAncOff_rand.wav', prinoiseFxlms ./ max(abs(prinoiseFxlms)), fs);
+    audiowrite('noiseAncOff_rand.wav', primaryFxlms ./ max(abs(primaryFxlms)), fs);
     audiowrite('noiseAncOn_rand.wav', saveError ./ max(abs(saveError)), fs);
 elseif strcmpi(noiseType, 'tonal')
-    audiowrite('noiseAncOff_tonal.wav', prinoiseFxlms ./ max(abs(prinoiseFxlms)), fs);
+    audiowrite('noiseAncOff_tonal.wav', primaryFxlms ./ max(abs(primaryFxlms)), fs);
     audiowrite('noiseAncOn_tonal.wav', saveError ./ max(abs(saveError)), fs);
 end
