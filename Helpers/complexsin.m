@@ -3,7 +3,7 @@ function y = complexsin(fs, f, amp, phs, L)
 %   Components of the signal are specified using the elements of arrays f, amp and
 %   phs. These three arrays must have the same number of elements. Note
 %   that phs is specified in degrees. L is the total duration of the
-%   signal in seconds.
+%   signal in seconds. fs is the sampling rate.
 
 % Defaults
 if nargin < 5
@@ -28,7 +28,7 @@ if iscolumn(phs)
     phs = phs.';
 end
 
-% Generate sinewave
+% Generate signal
 T = 1/fs;
 t = (0:T:L-T).';
 y = exp(1j * (2*pi*t*f + deg2rad(phs))) * amp.';
@@ -36,10 +36,10 @@ y = exp(1j * (2*pi*t*f + deg2rad(phs))) * amp.';
 % Plot signal if no output is requested
 if nargout == 0
     plot(t, real(y), t, imag(y));
-    xlabel('time (s)'); 
-    ylabel('amplitude');
-    grid on; grid minor;
+    xlabel('time (s)'); ylabel('amplitude');
     legend('Real part', 'Imaginary part');
+    title('Complex Sinusoid');
+    grid on; grid minor;
 end
 
 end

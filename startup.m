@@ -5,7 +5,7 @@ clearvars
 clc
 
 % Add subfolders to MATLAB path
-folders = {'Examples', 'Generate', 'Algorithms', 'External'};
+folders = {'Examples', 'Generate', 'Algorithms', 'External', 'Helpers'};
 
 numFolders = numel(folders);
 for i = 1:numFolders 

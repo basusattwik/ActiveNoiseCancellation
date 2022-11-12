@@ -35,18 +35,15 @@ numErr = size(errmics,  1);  % Number of error mics
 noise  = zeros(simtime * fs, numSrc);
 
 % Source 1
-f   = [150, 300, 450, 600];
-amp = [.01, .02, .02, 0.01];
-phs = [30, 20, 65, 10];
+f   = [150, 150, 150, 150];
+amp = [1, 1, 1, 1];
+phs = [0, 0, 0, 0];
 
-t = 0:1/fs:(simtime)-1/fs;
-for i = 1:length(amp)
-    noise = noise + amp(i) * sin(2*pi*f(i)*t + deg2rad(phs(i))).';
-end
+t = (0:1/fs:(simtime)-1/fs).';
+noise(:, 1) = real(complexsin(fs, f, amp, phs, simtime));
 
 % Add other sources below:
 % You can also add .wav files
-% ...
 
 % Source 2
 noise(:, 2) = 0.1 * randn(simtime * fs, 1);
