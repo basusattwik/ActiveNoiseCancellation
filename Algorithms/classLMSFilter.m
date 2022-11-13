@@ -21,7 +21,7 @@ classdef classLMSFilter < matlab.System
 
     % Public, non-tunable properties
     properties(Nontunable)
-        filterlen(1, 1){mustBePositive, mustBeInteger} = 256; % adaptive filter length
+        filterLen(1, 1){mustBePositive, mustBeInteger} = 256; % adaptive filter length
     end
 
     properties(DiscreteState)
@@ -85,8 +85,8 @@ classdef classLMSFilter < matlab.System
 
         function resetImpl(obj)
             % Initialize / reset discrete-state properties
-            obj.states = zeros(obj.filterlen, obj.numSpk);
-            obj.coeffs = zeros(obj.numSpk, obj.numErr, obj.filterlen);
+            obj.states = zeros(obj.filterLen, obj.numSpk);
+            obj.coeffs = zeros(obj.numSpk, obj.numErr, obj.filterLen);
             obj.error  = zeros(1, obj.numErr);
             obj.output = zeros(obj.numErr, obj.numSpk);
             obj.powrefhist = zeros(1, obj.numSpk);

@@ -16,37 +16,37 @@ fs = 6000;
 % Acoustic properties
 roomDim    = [4, 3, 2];                % Room dimensions    [x y z] (m)
 sources    = [2, 3.5, 2; 3, 3.5, 1];   % Source position    [x y z] (m)
-refmics    = [3, 0.1, 2; 3, 0.1, 2.1]; % Reference mic position [x y z] (m)
-errmics    = [3, 1.5, 2; 3, 1.8, 2];   % Error mic position [x y z] (m)
+refMics    = [3, 0.1, 2; 3, 0.1, 2.1]; % Reference mic position [x y z] (m)
+errMics    = [3, 1.5, 2; 3, 1.8, 2];   % Error mic position [x y z] (m)
 speakers   = [3, 3.5, 2; 3, 3.8, 2];   % Speaker position   [x y z] (m)
-numtaps    = 300;                      % Number of samples in IR
-soundspeed = 340;                      % Speed of sound in  (m/s)
-reverbtime = 0.1;                      % Reverberation time (s)
-sourcetype = 'tonal';                  
-simtime    = 30; 
+numTaps    = 300;                      % Number of samples in IR
+soundSpeed = 340;                      % Speed of sound in  (m/s)
+reverbTime = 0.1;                      % Reverberation time (s)
+sourceType = 'tonal';                  
+simTime    = 30; 
 
 %% Input signals (sources)
 
 numSrc = size(sources,  1);  % Number of sources
-numRef = size(refmics,  1);  % Number of reference mics
+numRef = size(refMics,  1);  % Number of reference mics
 numSpk = size(speakers, 1);  % Number of antinoise speakers
-numErr = size(errmics,  1);  % Number of error mics
+numErr = size(errMics,  1);  % Number of error mics
 
-noise  = zeros(simtime * fs, numSrc);
+noise  = zeros(simTime * fs, numSrc);
 
 % Source 1
-f   = [150, 150, 150, 150];
-amp = [1, 1, 1, 1];
+f   = [150, 200, 250, 3000];
+amp = [0.1, 0.2, 0.1, 0.2];
 phs = [0, 0, 0, 0];
 
-t = (0:1/fs:(simtime)-1/fs).';
-noise(:, 1) = real(complexsin(fs, f, amp, phs, simtime));
+t = (0:1/fs:(simTime)-1/fs).';
+noise(:, 1) = imag(complexsin(fs, f, amp, phs, simTime));
 
 % Add other sources below:
 % You can also add .wav files
 
 % Source 2
-noise(:, 2) = 0.1 * randn(simtime * fs, 1);
+noise(:, 2) = 0.1 * randn(simTime * fs, 1);
 
 %% Transfer functions
 
@@ -55,10 +55,10 @@ disp('Generating Room Impulse Responses...');
 % Primary Paths: Source to Error Mics
 priPathParams.fs     = fs;
 priPathParams.srcPos = sources;           
-priPathParams.micPos = errmics;          
-priPathParams.c      = soundspeed;         
-priPathParams.beta   = reverbtime;         
-priPathParams.n      = numtaps;                  
+priPathParams.micPos = errMics;          
+priPathParams.c      = soundSpeed;         
+priPathParams.beta   = reverbTime;         
+priPathParams.n      = numTaps;                  
 priPathParams.L      = roomDim;             
 
 priPathFilt = genRirFilters(priPathParams);
@@ -66,10 +66,10 @@ priPathFilt = genRirFilters(priPathParams);
 % Secondary Paths: Speakers to Error Mics
 secPathParams.fs     = fs;
 secPathParams.srcPos = speakers; 
-secPathParams.micPos = errmics; 
-secPathParams.c      = soundspeed;         
-secPathParams.beta   = reverbtime;         
-secPathParams.n      = numtaps;                  
+secPathParams.micPos = errMics; 
+secPathParams.c      = soundSpeed;         
+secPathParams.beta   = reverbTime;         
+secPathParams.n      = numTaps;                  
 secPathParams.L      = roomDim;             
 
 secPathFilt = genRirFilters(secPathParams);
@@ -77,10 +77,10 @@ secPathFilt = genRirFilters(secPathParams);
 % Reference Paths: Source to Reference Mics
 refPathParams.fs     = fs;
 refPathParams.srcPos = sources;  
-refPathParams.micPos = refmics; 
-refPathParams.c      = soundspeed;         
-refPathParams.beta   = reverbtime;         
-refPathParams.n      = numtaps;                  
+refPathParams.micPos = refMics; 
+refPathParams.c      = soundSpeed;         
+refPathParams.beta   = reverbTime;         
+refPathParams.n      = numTaps;                  
 refPathParams.L      = roomDim;             
 
 refPathFilt = genRirFilters(refPathParams);
@@ -88,17 +88,20 @@ refPathFilt = genRirFilters(refPathParams);
 %% Save all parameters in a mat file
 
 % Hardware config
-ancSimInput.numSrc = size(sources,  1);
-ancSimInput.numRef = size(refmics,  1) ;
-ancSimInput.numErr = size(errmics,  1);
-ancSimInput.numSpk = size(speakers, 1);
+ancSimInput.config.numSrc = size(sources,  1);
+ancSimInput.config.numRef = size(refMics,  1) ;
+ancSimInput.config.numErr = size(errMics,  1);
+ancSimInput.config.numSpk = size(speakers, 1);
+ancSimInput.config.fs = fs;
 
 % Acoustic config
 ancSimInput.acoustics.roomDim  = roomDim;
 ancSimInput.acoustics.sources  = sources;
-ancSimInput.acoustics.refmics  = refmics;
-ancSimInput.acoustics.errmics  = errmics;
+ancSimInput.acoustics.refMics  = refMics;
+ancSimInput.acoustics.errMics  = errMics;
 ancSimInput.acoustics.speakers = speakers;
+ancSimInput.acoustics.soundSpeed = soundSpeed;                      
+ancSimInput.acoustics.reverbTime = reverbTime; 
 
 % All IRs
 ancSimInput.priPathFilters = priPathFilt;
@@ -107,7 +110,7 @@ ancSimInput.secPathFilters = secPathFilt;
 
 % Input signals (sources)
 ancSimInput.noiseSource = noise;
-ancSimInput.simTime = simtime;
+ancSimInput.simTime = simTime;
 
 folderName = 'InputFiles';
 if ~exist(folderName, 'dir')

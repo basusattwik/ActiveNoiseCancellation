@@ -1,11 +1,12 @@
-% Startup script for the ANC simulation framework
+% Startup script for the Active Noise Cancellation simulation framework
 
 close all
 clearvars
 clc
 
-% Add subfolders to MATLAB path
-folders = {'Examples', 'Generate', 'Algorithms', 'External', 'Helpers'};
+% Add folders to MATLAB path
+folders = {'Examples', 'Generate', 'Algorithms', 'External', ...
+           'Helpers', 'Classes', 'Simulations', 'InputFiles'};
 
 numFolders = numel(folders);
 for i = 1:numFolders 
