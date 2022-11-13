@@ -4,12 +4,20 @@ close all
 clearvars
 clc
 
+subfolders = {'Input', 'Output'};
+for i = 1:numel(subfolders)
+    name = ['Data/', subfolders{i}]; 
+    if ~exist(name, 'dir')
+       mkdir(name);
+       addpath(genpath(name));
+    end
+end
+
 % Add folders to MATLAB path
 folders = {'Examples', 'Generate', 'Algorithms', 'External', ...
-           'Helpers', 'Classes', 'Simulations', 'InputFiles'};
+           'Helpers', 'Classes', 'Simulations', 'Data'};
 
-numFolders = numel(folders);
-for i = 1:numFolders 
+for i = 1:numel(folders)
     addpath(genpath(folders{i}));
 end
 

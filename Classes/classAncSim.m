@@ -8,8 +8,8 @@ classdef classAncSim
                         'numRef', 1, ...
                         'numErr', 1, ...
                         'numSpk', 1, ...
-                        'blockLen', 1, ...
-                        'fs', 8000); % ToDo: this is unused now. 
+                        'blockLen', 1, ... % ToDo: this is unused now.
+                        'fs', 8000);  
         
         % Acoustic properties
         acoustics = struct('roomDim', [], ...
@@ -27,20 +27,27 @@ classdef classAncSim
         signals = struct('noise', [], ...
                          'simtime', []);
 
-%         plt = classVisualize;
+        % Class plot data
+        plt = classAncPlots;
 
     end
 
     properties
-
         % System Objects
-        lms   = sysLMS;
-        fxlms = sysMimoFxLMS; % how to setup?
+        lms;
+        fxlms; % how to setup?
 
         % Acoustic sim
-        pPath = sysMimoConv;
-        rPath = sysMimoConv;
-        sPath = sysMimoConv; % How to setup??
+        pPath;
+        rPath;
+        sPath; % How to setup??
+
+        % Buffers
+        primary;
+        error;
+        antinoise;
+        reference;
+        output;
     end
 
     methods
@@ -76,7 +83,7 @@ classdef classAncSim
         end
 
         function obj = setupSystemObj(obj, fxlmsProp, lmsProp)
-            %SETUPSYSTEMOBJ
+            %SETUPSYSTEMObj
 
             % Setup FxLMS Algorithm
             obj.fxlms = sysMimoFxLMS('numRef',     obj.config.numRef, ...
@@ -114,31 +121,69 @@ classdef classAncSim
                                     'filters',  obj.paths.refPathFilters);
         end
 
-        function obj = measureIr(obj)
+        function obj = resetBuffers(obj)
+            %RESETBUFFERS
 
-            % Initialize excitation signal
-            extime = 10; % 10 sec
-            len = obj.config.fs * extime;
-            randNoise = randn(len, obj.config.numSpk);
+            % Initialize all buffers
+            obj.primary   = zeros(obj.config.blockLen, obj.config.numErr);
+            obj.error     = zeros(obj.config.blockLen, obj.config.numErr);
+            obj.antinoise = zeros(obj.config.blockLen, obj.config.numErr);
+            obj.reference = zeros(obj.config.blockLen, obj.config.numRef);
+            obj.output    = zeros(obj.config.blockLen, obj.config.numSpk);
+        end
+
+        function obj = measureIr(obj)
+            %MEASUREIR
+
+            % Initialize excitation signal generator
+            T   = 10; % 10 sec
+            len = obj.config.fs * T;
+            noise = dsp.ColoredNoise('white', 'SamplesPerFrame', obj.config.blockLen, 'NumChannels', obj.config.numSpk);
             
             % Adaptively estimate secondary paths
             for i = 1:len
+
+                % Excitation signal
+                x = noise();
             
                 % Simulate secondary path
-                output = obj.sPath.step(randNoise(i, :));
+                obj.output = obj.sPath.step(x);
             
                 % Call LMS algorithm 
-                obj.lms.step(randNoise(i,:), output);
+                obj.lms.step(x, obj.output);
             end
 
             % Set estimated secondary path filters in FxLMS algorithm
             obj.fxlms.estSecPathCoeff = obj.lms.coeffs;
+            obj.fxlms.estSecPathFilterLen = obj.lms.filterLen;
 
-            % Remember to set the sec path filters and filter lengths in MimoFxLMS
+            % Reset all buffers
+            obj = resetBuffers(obj);
         end
 
         function obj = ancSimCore(obj)
             %ANCSIMCORE
+
+            noise = obj.signals.noise;
+
+            for i = 1:obj.signals.simTime * obj.config.fs
+        
+                % Simulate primary noise
+                obj.primary = obj.pPath.step(noise(i, :));
+            
+                % Calc error i.e. residual noise
+                obj.error = obj.primary - obj.antinoise;
+            
+                % Simulate reference path acoustics
+                obj.reference = obj.rPath.step(noise(i, :));
+            
+                % Call FxLMS algorithm
+                obj.output = obj.fxlms(obj.reference, obj.error); 
+            
+                % Simulate secondary path acoustics
+                obj.antinoise = obj.sPath.step(obj.output);
+                    
+            end
         end
     end
 end

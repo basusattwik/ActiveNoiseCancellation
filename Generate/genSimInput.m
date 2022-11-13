@@ -112,7 +112,7 @@ ancSimInput.secPathFilters = secPathFilt;
 ancSimInput.noiseSource = noise;
 ancSimInput.simTime = simTime;
 
-folderName = 'InputFiles';
+folderName = 'Data/Input';
 if ~exist(folderName, 'dir')
    mkdir(folderName);
    addpath(genpath(folderName));
