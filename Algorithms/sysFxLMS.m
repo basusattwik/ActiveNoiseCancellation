@@ -1,4 +1,4 @@
-classdef classFxLMSFilter < matlab.System
+classdef sysFxLMS < matlab.System
     % CLASSFXLMSFILTER Add summary here
     
     % Public, tunable properties
@@ -46,7 +46,7 @@ classdef classFxLMSFilter < matlab.System
 
     methods
         % Constructor
-        function obj = classFxLMSFilter(varargin)
+        function obj = sysFxLMS(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:})
         end

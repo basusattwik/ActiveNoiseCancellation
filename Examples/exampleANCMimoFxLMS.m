@@ -89,7 +89,7 @@ else
     randNoise = randn(fs * extime, numSpk);
     
     % Setup LMS system object
-    lmsSysObj = classLMSFilter('numSpk', numSpk, 'numErr', numErr, 'stepsize', 0.04, 'leakage', 0.001, 'normweight', 1, 'smoothing', 0.97, 'filterlen', numIrTaps);
+    lmsSysObj = sysLMS('numSpk', numSpk, 'numErr', numErr, 'stepsize', 0.04, 'leakage', 0.001, 'normweight', 1, 'smoothing', 0.97, 'filterlen', numIrTaps);
     
     % Adaptively estimate secondary paths
     xexfilt = zeros(1, numErr);
@@ -148,7 +148,7 @@ antinoiseFxlms = zeros(1, numErr);
 referenceFxlms = zeros(1, numRef);
 
 % Setup FxLMS system object
-fxlmsSysObj = classMimoFxLMSFilter('numRef', numRef, 'numErr', numErr, 'numSpk', numSpk, 'stepsize', stepFxlms, 'leakage', leakFxlms, ...
+fxlmsSysObj = sysMimoFxLMS('numRef', numRef, 'numErr', numErr, 'numSpk', numSpk, 'stepsize', stepFxlms, 'leakage', leakFxlms, ...
                                    'normweight', normK, 'smoothing', 0.97, 'estSecPathCoeff', secPathEstCoef, 'filterLen', 200, ...
                                    'estSecPathFilterLen', numIrTaps);
 

@@ -1,4 +1,4 @@
-classdef classLMSFilter < matlab.System
+classdef sysLMS < matlab.System
     % CLASSLMSFILTER Add summary here
 
     % Public, tunable properties
@@ -39,7 +39,7 @@ classdef classLMSFilter < matlab.System
 
     methods
         % Constructor
-        function obj = classLMSFilter(varargin)
+        function obj = sysLMS(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:})
         end

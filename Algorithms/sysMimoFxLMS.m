@@ -1,5 +1,5 @@
-classdef classMimoFxLMSFilter < matlab.System
-    % CLASSMIMOFXLMSFILTER Add summary here
+classdef sysMimoFxLMS < matlab.System
+    % SYSMIMOFXLMS Add summary here
     
     % Public, tunable properties
     properties
@@ -47,7 +47,7 @@ classdef classMimoFxLMSFilter < matlab.System
 
     methods
         % Constructor
-        function obj = classMimoFxLMSFilter(varargin)
+        function obj = sysMimoFxLMS(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:})
         end

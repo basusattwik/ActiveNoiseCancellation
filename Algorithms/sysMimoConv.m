@@ -1,5 +1,5 @@
-classdef multiChannelConv < matlab.System
-    % untitled5 Add summary here
+classdef sysMimoConv < matlab.System
+    % SYSMIMOCONV Add summary here
     %
     % NOTE: When renaming the class name untitled5, the file name
     % and constructor name must be updated to use the class name.
@@ -31,7 +31,7 @@ classdef multiChannelConv < matlab.System
 
     methods
         % Constructor
-        function obj = multiChannelConv(varargin)
+        function obj = sysMimoConv(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:})
         end
