@@ -15,7 +15,9 @@ L       = params.L;                   % Room dimensions [x y z] (m)
 imp = cell(numSrcs, numMics);
 for src = 1:numSrcs
     for mic = 1:numMics
-        imp{src, mic} = dsp.FIRFilter(genRoomIr(speed, fs, micPos(mic, :), srcPos(src, :), L, beta, n));
+        h = genRoomIr(speed, fs, micPos(mic, :), srcPos(src, :), L, beta, n);
+        h = h ./ max(abs(h));
+        imp{src, mic} = dsp.FIRFilter(h);
     end
 end
 end

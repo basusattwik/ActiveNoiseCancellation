@@ -15,15 +15,15 @@ fs = 6000;
 
 % Acoustic properties
 roomDim    = [4, 3, 2];                % Room dimensions    [x y z] (m)
-sources    = [2, 3.5, 2; 3, 3.5, 1];   % Source position    [x y z] (m)
-refMics    = [3, 0.1, 2; 3, 0.1, 2.1]; % Reference mic position [x y z] (m)
-errMics    = [3, 1.5, 2; 3, 1.8, 2];   % Error mic position [x y z] (m)
-speakers   = [3, 3.5, 2; 3, 3.8, 2];   % Speaker position   [x y z] (m)
+sources    = [2, 3.5, 2]; %; 3, 3.5, 1];   % Source position    [x y z] (m)
+refMics    = [3, 0.1, 2]; %; 3, 0.1, 2.1]; % Reference mic position [x y z] (m)
+errMics    = [3, 1.5, 2]; % ; 3, 1.8, 2];   % Error mic position [x y z] (m)
+speakers   = [3, 3.5, 2]; % 3, 3.8, 2];   % Speaker position   [x y z] (m)
 numTaps    = 300;                      % Number of samples in IR
 soundSpeed = 340;                      % Speed of sound in  (m/s)
 reverbTime = 0.1;                      % Reverberation time (s)
 sourceType = 'tonal';                  
-simTime    = 30; 
+simTime    = 20; 
 
 %% Input signals (sources)
 
@@ -46,7 +46,7 @@ noise(:, 1) = imag(complexsin(fs, f, amp, phs, simTime));
 % You can also add .wav files
 
 % Source 2
-noise(:, 2) = 0.1 * randn(simTime * fs, 1);
+% noise(:, 2) = 0.1 * randn(simTime * fs, 1);
 
 %% Transfer functions
 

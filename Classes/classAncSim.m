@@ -27,20 +27,17 @@ classdef classAncSim
         signals = struct('noise', [], ...
                          'simtime', []);
 
-        % Class plot data
-        plt = classAncPlots;
-
     end
 
     properties
-        % System Objects
+        % Adaptive Filter System Objects
         lms;
-        fxlms; % how to setup?
+        fxlms;
 
-        % Acoustic sim
-        pPath;
-        rPath;
-        sPath; % How to setup??
+        % Acoustic Sim System Objects
+        priPath;
+        refPath;
+        secPath;
 
         % Buffers
         primary;
@@ -105,20 +102,20 @@ classdef classAncSim
                              'filterLen',  lmsProp.filterLen);
 
             % Setup Multi-channel convolvers
-            obj.pPath = sysMimoConv('numInp',   obj.config.numErr, ...
-                                    'numOut',   obj.config.numSrc, ...
-                                    'blockLen', obj.config.blockLen, ...
-                                    'filters',  obj.paths.priPathFilters);
+            obj.priPath = sysMimoConv('numInp',   obj.config.numErr, ...
+                                      'numOut',   obj.config.numSrc, ...
+                                      'blockLen', obj.config.blockLen, ...
+                                      'filters',  obj.paths.priPathFilters);
 
-            obj.sPath = sysMimoConv('numInp',   obj.config.numErr, ...
-                                    'numOut',   obj.config.numSpk, ...
-                                    'blockLen', obj.config.blockLen, ...
-                                    'filters',  obj.paths.secPathFilters);
+            obj.secPath = sysMimoConv('numInp',   obj.config.numErr, ...
+                                      'numOut',   obj.config.numSpk, ...
+                                      'blockLen', obj.config.blockLen, ...
+                                      'filters',  obj.paths.secPathFilters);
 
-            obj.rPath = sysMimoConv('numInp',   obj.config.numRef, ...
-                                    'numOut',   obj.config.numSrc, ...
-                                    'blockLen', obj.config.blockLen, ...
-                                    'filters',  obj.paths.refPathFilters);
+            obj.refPath = sysMimoConv('numInp',   obj.config.numRef, ...
+                                      'numOut',   obj.config.numSrc, ...
+                                      'blockLen', obj.config.blockLen, ...
+                                      'filters',  obj.paths.refPathFilters);
         end
 
         function obj = resetBuffers(obj)
@@ -147,43 +144,74 @@ classdef classAncSim
                 x = noise();
             
                 % Simulate secondary path
-                obj.output = obj.sPath.step(x);
+                obj.output = obj.secPath.step(x);
             
                 % Call LMS algorithm 
                 obj.lms.step(x, obj.output);
             end
 
             % Set estimated secondary path filters in FxLMS algorithm
-            obj.fxlms.estSecPathCoeff = obj.lms.coeffs;
+            obj.fxlms.estSecPathCoeff     = obj.lms.coeffs;
             obj.fxlms.estSecPathFilterLen = obj.lms.filterLen;
 
             % Reset all buffers
             obj = resetBuffers(obj);
         end
 
-        function obj = ancSimCore(obj)
+        function [obj, simData] = ancSimCore(obj)
             %ANCSIMCORE
 
-            noise = obj.signals.noise;
+            % Preallocate arrays
 
+            totalSamples  = obj.signals.simTime * obj.config.fs;
+            simData.totalSamples  = totalSamples;
+            simData.savePrimary   = zeros(totalSamples, obj.config.numErr);
+            simData.saveReference = zeros(totalSamples, obj.config.numRef);
+            simData.saveError     = zeros(totalSamples, obj.config.numErr);
+            simData.saveAntinoise = zeros(totalSamples, obj.config.numErr);
+            simData.saveOutput    = zeros(totalSamples, obj.config.numSpk);
+
+            blockInd = 1:obj.config.blockLen;
+            noise = obj.signals.noise;
             for i = 1:obj.signals.simTime * obj.config.fs
         
                 % Simulate primary noise
-                obj.primary = obj.pPath.step(noise(i, :));
+                obj.primary = obj.priPath.step(noise(blockInd, :));
             
                 % Calc error i.e. residual noise
                 obj.error = obj.primary - obj.antinoise;
             
                 % Simulate reference path acoustics
-                obj.reference = obj.rPath.step(noise(i, :));
+                obj.reference = obj.refPath.step(noise(blockInd, :));
             
                 % Call FxLMS algorithm
-                obj.output = obj.fxlms(obj.reference, obj.error); 
+                obj.output = obj.fxlms.step(obj.reference, obj.error); 
             
                 % Simulate secondary path acoustics
-                obj.antinoise = obj.sPath.step(obj.output);
+                obj.antinoise = obj.secPath.step(obj.output);
                     
+                % Save data for analysis
+                simData.savePrimary(blockInd, :)   = obj.primary;
+                simData.saveReference(blockInd, :) = obj.reference;
+                simData.saveError(blockInd, :)     = obj.error;
+                simData.saveAntinoise(blockInd, :) = obj.antinoise;
+                simData.saveOutput(blockInd, :)    = obj.output;
+
+                % Increment block indices
+                blockInd = blockInd + obj.config.blockLen;
             end
+        
+            % Save data to struct
+            simData.numErr = obj.config.numErr;
+            simData.numRef = obj.config.numRef;
+            simData.numSrc = obj.config.numSrc;
+            simData.numSpk = obj.config.numSpk;
+
+            simData.priPath = obj.paths.priPathFilters;
+            simData.refPath = obj.paths.refPathFilters;
+            simData.secPath = obj.paths.secPathFilters;
+
+            simData.fs = obj.config.fs;
         end
     end
 end
