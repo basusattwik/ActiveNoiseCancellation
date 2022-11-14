@@ -7,7 +7,7 @@ clc
 simInput = '/Users/sattwikbasu/Repos/ActiveNoiseCancellation/Data/Input/ancSimInput.mat';
 
 % Algorithm tuning
-fxlmsProp.step = 0.00002;
+fxlmsProp.step = 0.000035;
 fxlmsProp.leak = 0.000001;
 fxlmsProp.normweight = 0.1;
 fxlmsProp.smoothing  = 0.997;
@@ -29,7 +29,7 @@ anc = anc.resetBuffers();
 
 disp('--- Measuring Impulse Response');
 tic;
-bCopy = true;
+bCopy = false;
 anc   = anc.measureIr(bCopy);
 toc;
 
@@ -43,6 +43,7 @@ toc;
 disp('--- Plotting');
 plt = classAncPlots(simData);
 plt.genTimeDomainPlots();
+plt.genFreqDomainPlots();
 
 %% Close out
 

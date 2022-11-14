@@ -20,8 +20,9 @@ classdef classAncPlots < handle
         antinoise; % Speaker outputs filtered through sec. path
 
         % Frequency Domain Data (PSD)
-        psdPrimary; % PSD of primary noise
-        psdError;   % PSD of error signals
+        psdPrimary;   % PSD of primary noise
+        psdAntinoise; % PSD of antinoise
+        psdError;     % PSD of error signals
 
         % Transfer Functions
         priPathIr;     % Primary path: Noises source to error mics
@@ -82,6 +83,41 @@ classdef classAncPlots < handle
                     title(['Mic: ', num2str(err)]);
             end
             title(tl, 'Noise Cancellation');
+            linkaxes(ax, 'xy')
+        end
+
+        function genFreqDomainPlots(obj)
+            %GENFREQDOMAINPLOTS
+
+            % Calculate frequency domain data
+            winLen  = 1024;
+            overlap = 512;
+            fftLen  = 2048;
+            
+            % for residual noise, wait for a few seconds and then compute PSD to ensure
+            % convergence
+            waitTime = 5; % sec
+            
+            [obj.psdPrimary,  fx] = pwelch(obj.primary, winLen, overlap, fftLen, obj.fs);
+            [obj.psdAntinoise, ~] = pwelch(obj.antinoise, winLen, overlap, fftLen, obj.fs);
+            [obj.psdError, ~]     = pwelch(obj.error(waitTime * obj.fs:end, :), winLen, overlap, fftLen, obj.fs);
+
+            figure
+            tl = tiledlayout('flow');
+            ax = zeros(1, obj.numErr);
+
+            for err = 1:obj.numErr
+                ax(err) = nexttile;
+                    plot(fx, 10*log10(obj.psdPrimary(:, err)), 'LineWidth', 1.1);
+                    hold on;
+                    plot(fx, 10*log10(obj.psdAntinoise(:, err)), 'LineWidth', 1.1);
+                    plot(fx, 10*log10(obj.psdError(:, err)), 'LineWidth', 1.1);
+                    grid on; grid minor;
+                    xlabel('Frequency [Hz]'); ylabel('Power [dB]');
+                    legend('Primary Noise', 'Antinoise', 'Error');
+                    title('Noise Cancellation Spectrum');
+            end
+            title(tl, 'Noise Cancellation PSD');
             linkaxes(ax, 'xy')
         end
     end
