@@ -4,35 +4,35 @@ classdef classAncPlots < handle
 
     properties
 
-        % Setup
-        fs;
-        simLen;
-        numErr;
-        numRef;
-        numSrc;
-        numSpk;
+        % Setup 
+        fs;     % Sampling rate
+        simLen; % Total noise length in samples
+        numErr; % Number of error mics
+        numRef; % Number of reference mics
+        numSrc; % Number of noise sources
+        numSpk; % Number of speakers
 
-        % Signals
-        primary;
-        reference;
-        error;
-        output;
-        antinoise;
+        % Time domain signals
+        primary;   % Primary noise
+        reference; % Reference mic signals
+        error;     % Errror mic signals
+        output;    % Speaker output signals
+        antinoise; % Speaker outputs filtered through sec. path
 
-        % Frequency Domain Data
-        psdPrimary;
-        psdError;
+        % Frequency Domain Data (PSD)
+        psdPrimary; % PSD of primary noise
+        psdError;   % PSD of error signals
 
         % Transfer Functions
-        priPathIr;
-        priPathFftMag;
+        priPathIr;     % Primary path: Noises source to error mics
+        priPathFftMag; 
         priPathFftPhs;
 
-        secPathIr;
+        secPathIr;     % Secondary path: Speakers to error mics
         secPathFftMag;
         secPathFftPhs;
 
-        refPathIr;
+        refPathIr;     % Reference path: Noise sources to reference mics
         refPathFftMag;
         refPathFftPhs;
     end
@@ -64,22 +64,25 @@ classdef classAncPlots < handle
         function genTimeDomainPlots(obj)
             %METHOD1 Summary of this method goes here
             %   Detailed explanation goes here
+
             tx = (1:obj.simLen)/obj.fs;
 
             figure
             tl = tiledlayout('flow');
+            ax = zeros(1, obj.numErr);
             for err = 1:obj.numErr
-                nexttile
-                    plot(tx, obj.primary(:, err));
+                ax(err) = nexttile;
+                    plot(tx, obj.primary(:, err), 'LineWidth', 1.2);
                     hold on;
-                    plot(tx, -obj.antinoise(:, err));
-                    plot(tx, obj.error(:, err));
+                    plot(tx, -obj.antinoise(:, err), 'LineWidth', 1.2);
+                    plot(tx, obj.error(:, err), 'LineWidth', 1.2);
                     grid on; grid minor;
                     xlabel('time [s]'); ylabel('Amplitude');
                     legend('Primary Noise', 'Antinoise', 'Error');
                     title(['Mic: ', num2str(err)]);
             end
             title(tl, 'Noise Cancellation');
+            linkaxes(ax, 'xy')
         end
     end
 end

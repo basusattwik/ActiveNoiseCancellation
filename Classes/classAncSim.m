@@ -129,40 +129,53 @@ classdef classAncSim
             obj.output    = zeros(obj.config.blockLen, obj.config.numSpk);
         end
 
-        function obj = measureIr(obj)
+        function obj = measureIr(obj, bCopy)
             %MEASUREIR
 
-            % Initialize excitation signal generator
-            T   = 10; % 10 sec
-            len = obj.config.fs * T;
-            noise = dsp.ColoredNoise('white', 'SamplesPerFrame', obj.config.blockLen, 'NumChannels', obj.config.numSpk);
-            
-            % Adaptively estimate secondary paths
-            for i = 1:len
+            switch bCopy
 
-                % Excitation signal
-                x = noise();
-            
-                % Simulate secondary path
-                obj.output = obj.secPath.step(x);
-            
-                % Call LMS algorithm 
-                obj.lms.step(x, obj.output);
+                case true % Copy coefficients from secondary path IR model
+
+                    for spk = obj.config.numSpk
+                        for err = obj.config.numErr
+                            obj.fxlms.estSecPathCoeff(spk, err, :) = obj.paths.secPathFilters{spk, err}.Numerator;
+                        end
+                    end
+                    obj.fxlms.estSecPathFilterLen = numel(obj.paths.secPathFilters{1, 1}.Numerator);
+
+                case false % Measure IR using LMS 
+
+                % Initialize excitation signal generator
+                T   = 10; % 10 sec
+                len = obj.config.fs * T;
+                noise = dsp.ColoredNoise('white', 'SamplesPerFrame', obj.config.blockLen, 'NumChannels', obj.config.numSpk);
+                
+                % Adaptively estimate secondary paths
+                for i = 1:len
+    
+                    % Excitation signal
+                    x = noise();
+                
+                    % Simulate secondary path
+                    obj.output = obj.secPath.step(x);
+                
+                    % Call LMS algorithm 
+                    obj.lms.step(x, obj.output);
+                end
+    
+                % Set estimated secondary path filters in FxLMS algorithm
+                obj.fxlms.estSecPathCoeff     = obj.lms.coeffs;
+                obj.fxlms.estSecPathFilterLen = obj.lms.filterLen;
+    
+                % Reset all buffers
+                obj = resetBuffers(obj);
             end
-
-            % Set estimated secondary path filters in FxLMS algorithm
-            obj.fxlms.estSecPathCoeff     = obj.lms.coeffs;
-            obj.fxlms.estSecPathFilterLen = obj.lms.filterLen;
-
-            % Reset all buffers
-            obj = resetBuffers(obj);
         end
 
         function [obj, simData] = ancSimCore(obj)
             %ANCSIMCORE
 
             % Preallocate arrays
-
             totalSamples  = obj.signals.simTime * obj.config.fs;
             simData.totalSamples  = totalSamples;
             simData.savePrimary   = zeros(totalSamples, obj.config.numErr);
@@ -170,6 +183,10 @@ classdef classAncSim
             simData.saveError     = zeros(totalSamples, obj.config.numErr);
             simData.saveAntinoise = zeros(totalSamples, obj.config.numErr);
             simData.saveOutput    = zeros(totalSamples, obj.config.numSpk);
+
+            % Wait bar
+            wbar = waitbar(0, 'Please wait', 'Name','ANC Simulation...',...
+                           'CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
 
             blockInd = 1:obj.config.blockLen;
             noise = obj.signals.noise;
@@ -199,7 +216,15 @@ classdef classAncSim
 
                 % Increment block indices
                 blockInd = blockInd + obj.config.blockLen;
+
+                % Update waitbar and message
+                if getappdata(wbar, 'canceling')
+                    break
+                end                
+                waitbar(i/totalSamples)
             end
+
+            delete(wbar);
         
             % Save data to struct
             simData.numErr = obj.config.numErr;
