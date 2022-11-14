@@ -169,6 +169,7 @@ classdef classAncSim
     
                 % Reset all buffers
                 obj = resetBuffers(obj);
+                obj.secPath.reset();
             end
         end
 

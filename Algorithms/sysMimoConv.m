@@ -59,6 +59,11 @@ classdef sysMimoConv < matlab.System
         function resetImpl(obj)
             % Initialize / reset discrete-state properties
             obj.output = zeros(obj.blockLen, obj.numInp);
+            for inp = 1:obj.numInp
+                for out = 1:obj.numOut
+                    reset(obj.filters{out, inp});
+                end
+            end
         end
     end
 end

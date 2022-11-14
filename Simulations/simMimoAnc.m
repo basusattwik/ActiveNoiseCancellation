@@ -7,9 +7,9 @@ clc
 simInput = '/Users/sattwikbasu/Repos/ActiveNoiseCancellation/Data/Input/MATFiles/ancSimInput.mat';
 
 % Algorithm tuning
-fxlmsProp.step = 0.00005;
-fxlmsProp.leak = 0.00001;
-fxlmsProp.normweight = 10;
+fxlmsProp.step = 0.2;
+fxlmsProp.leak = 0.0001;
+fxlmsProp.normweight = 1;
 fxlmsProp.smoothing  = 0.997;
 fxlmsProp.filterLen  = 300;
 

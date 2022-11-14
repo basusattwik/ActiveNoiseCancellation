@@ -85,7 +85,7 @@ secPathParams.beta   = reverbTime;
 secPathParams.n      = numTaps;                  
 secPathParams.L      = roomDim;             
 
-secPathFilt = genRirFilters(secPathParams);
+secPathFilt = genRirFilters(secPathParams, true);
 
 % Reference Paths: Source to Reference Mics
 refPathParams.fs     = fs;
