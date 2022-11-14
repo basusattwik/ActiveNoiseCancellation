@@ -1,5 +1,5 @@
 classdef sysLMS < matlab.System
-    % CLASSLMSFILTER Add summary here
+    % SYSLMS Add summary here
 
     % Public, tunable properties
     properties

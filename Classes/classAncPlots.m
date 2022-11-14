@@ -115,7 +115,7 @@ classdef classAncPlots < handle
                     grid on; grid minor;
                     xlabel('Frequency [Hz]'); ylabel('Power [dB]');
                     legend('Primary Noise', 'Antinoise', 'Error');
-                    title('Noise Cancellation Spectrum');
+                    title(['Mic: ', num2str(err)]);
             end
             title(tl, 'Noise Cancellation PSD');
             linkaxes(ax, 'xy')

@@ -4,11 +4,11 @@ clc
 %% Setup
 
 % Simulation input file
-simInput = '/Users/sattwikbasu/Repos/ActiveNoiseCancellation/Data/Input/ancSimInput.mat';
+simInput = '/Users/sattwikbasu/Repos/ActiveNoiseCancellation/Data/Input/MATFiles/ancSimInput.mat';
 
 % Algorithm tuning
-fxlmsProp.step = 0.000035;
-fxlmsProp.leak = 0.000001;
+fxlmsProp.step = 0.00005;
+fxlmsProp.leak = 0.00001;
 fxlmsProp.normweight = 0.1;
 fxlmsProp.smoothing  = 0.997;
 fxlmsProp.filterLen  = 300;
