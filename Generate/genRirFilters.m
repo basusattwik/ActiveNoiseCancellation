@@ -1,6 +1,10 @@
-function imp = genRirFilters(params)
+function imp = genRirFilters(params, bNorm)
 %GENRIRFILTERS Summary of this function goes here
 %   Detailed explanation goes here
+
+if nargin < 2
+    bNorm = false;
+end
 
 numSrcs = size(params.srcPos, 1);
 numMics = size(params.micPos, 1);
@@ -16,7 +20,9 @@ imp = cell(numSrcs, numMics);
 for src = 1:numSrcs
     for mic = 1:numMics
         h = genRoomIr(speed, fs, micPos(mic, :), srcPos(src, :), L, beta, n);
-        h = h ./ max(abs(h));
+        if bNorm
+            h = h ./ max(abs(h));
+        end
         imp{src, mic} = dsp.FIRFilter(h);
     end
 end

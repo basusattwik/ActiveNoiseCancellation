@@ -9,7 +9,7 @@ simInput = '/Users/sattwikbasu/Repos/ActiveNoiseCancellation/Data/Input/MATFiles
 % Algorithm tuning
 fxlmsProp.step = 0.00005;
 fxlmsProp.leak = 0.00001;
-fxlmsProp.normweight = 0.1;
+fxlmsProp.normweight = 10;
 fxlmsProp.smoothing  = 0.997;
 fxlmsProp.filterLen  = 300;
 

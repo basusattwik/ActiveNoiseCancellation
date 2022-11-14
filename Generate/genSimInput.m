@@ -23,7 +23,7 @@ numTaps    = 1024;                         % Number of samples in IR
 soundSpeed = 340;                          % Speed of sound in  (m/s)
 reverbTime = 0.4;                          % Reverberation time (s)
 sourceType = 'tonal';                  
-simTime    = 20; 
+simTime    = 10; 
 
 %% Input signals (sources)
 
@@ -53,13 +53,13 @@ phs = [30, 24, 60, 10, 20];
 noise(:, 2) = real(complexsin(fs, f, amp, phs, simTime));
 
 % Source 3
-noise(:, 3) = 0.8 * pinknoise(simTime * fs);
+noise(:, 3) = pinknoise(simTime * fs);
 
 % Source 4
 [cry, cryFs] = audioread('Input/Signals/noise_train.wav');
 [p, q] = rat(fs / cryFs);
 cry    = resample(cry, p, q);
-noise(:, 4) = 0.7 * cry(1:simTime * fs, 1);
+noise(:, 4) = 0.9 * cry(1:simTime * fs, 1);
 
 %% Transfer functions
 

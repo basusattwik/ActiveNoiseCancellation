@@ -138,10 +138,10 @@ classdef classAncSim
 
                     for spk = obj.config.numSpk
                         for err = obj.config.numErr
-                            obj.fxlms.estSecPathCoeff(spk, err, :) = obj.paths.secPathFilters{spk, err}.Numerator;
+                            obj.fxlms.estSecPathCoeff(spk, err, :) = obj.paths.secPathFilters{spk, err}.Numerator(1:obj.lms.filterLen);
                         end
                     end
-                    obj.fxlms.estSecPathFilterLen = numel(obj.paths.secPathFilters{1, 1}.Numerator);
+                    obj.fxlms.estSecPathFilterLen = numel(obj.paths.secPathFilters{1, 1}.Numerator(1:obj.lms.filterLen));
 
                 case false % Measure IR using LMS 
 

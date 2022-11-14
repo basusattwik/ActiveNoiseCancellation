@@ -81,17 +81,18 @@ classdef sysMimoFxLMS < matlab.System
                         obj.gradient(:, ref, spk) = obj.gradient(:, ref, spk) + error(1, mic) * squeeze(obj.filtRefState(:, ref, spk, mic));
 
                     end % mic loop
+
+                    % Leaky LMS
+                    if ~obj.bfreezecoeffs
+                        % Get normalized stepsize
+                        normstepsize = obj.stepsize / (1 + obj.normweight * mean(obj.powRefHist(ref, spk, :), 3));
+        
+                        % Update filter coefficients
+                        obj.filterCoeff(:, ref, spk) = obj.filterCoeff(:, ref, spk) * (1 - normstepsize * obj.leakage) ...
+                                                                       + normstepsize * obj.gradient(:, ref, spk);
+                    end
                 end % spk loop
             end % ref loop
-
-            % Leaky LMS
-            if ~obj.bfreezecoeffs
-                % Get normalized stepsize
-                normstepsize = obj.stepsize; % ToDo: Figure out normalization 1 / (1 + obj.normweight * obj.powRefHist(ref, spk, mic));
-
-                % Update filter coefficients
-                obj.filterCoeff = obj.filterCoeff * (1 - normstepsize * obj.leakage) + normstepsize * obj.gradient;
-            end
 
             % Get total output for all speakers
             output = zeros(1, obj.numSpk);
