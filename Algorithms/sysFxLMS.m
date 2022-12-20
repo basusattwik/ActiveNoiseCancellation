@@ -59,17 +59,17 @@ classdef sysFxLMS < matlab.System
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states.
         
-            % Get filtered reference signal
+            % Update state vector of adaptive filter and filtered reference signal
             obj.estSecPathState = [ref; obj.estSecPathState(1:end-1, 1)];
-            tempFiltOutput      = obj.estSecPathCoeff.' * obj.estSecPathState;
-            obj.filtRefState    = [tempFiltOutput; obj.filtRefState(1:end-1,1)];
+            obj.filterState = [ref; obj.filterState(1:end-1, 1)];
+
+            % Get filtered reference signal
+            tempFiltOutput   = squeeze(obj.estSecPathCoeff).' * obj.estSecPathState;
+            obj.filtRefState = [tempFiltOutput; obj.filtRefState(1:end-1,1)];
         
             % Normalize stepsize
             obj.powRefHist = obj.smoothing * norm(obj.filtRefState) + (1 - obj.smoothing) * obj.powRefHist;
             normstepsize   = obj.stepsize / (1 + obj.normweight * obj.powRefHist);
-        
-            % Update state vector of adaptive filter
-            obj.filterState = [ref; obj.filterState(1:end-1, 1)];
 
             % Update filter coefficients using leaky LMS
             if ~obj.bfreezecoeffs

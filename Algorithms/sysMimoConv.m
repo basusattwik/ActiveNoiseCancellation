@@ -14,8 +14,8 @@ classdef sysMimoConv < matlab.System
 
     % Public, non-tunable properties
     properties(Nontunable)
-        numInp;
-        numOut;
+        numMic;
+        numSrc;
         blockLen;
         filters;
     end
@@ -47,9 +47,9 @@ classdef sysMimoConv < matlab.System
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states. 
             obj.output(:) = 0;
-            for inp = 1:obj.numInp
-                for out = 1:obj.numOut
-                    obj.output(:, inp) = obj.output(1, inp) + obj.filters{out, inp}(xin(:, out));
+            for mic = 1:obj.numMic
+                for src = 1:obj.numSrc
+                    obj.output(:, mic) = obj.output(:, mic) + obj.filters{src, mic}(xin(:, src));
                 end
             end
 
@@ -58,9 +58,9 @@ classdef sysMimoConv < matlab.System
 
         function resetImpl(obj)
             % Initialize / reset discrete-state properties
-            obj.output = zeros(obj.blockLen, obj.numInp);
-            for inp = 1:obj.numInp
-                for out = 1:obj.numOut
+            obj.output = zeros(obj.blockLen, obj.numMic);
+            for inp = 1:obj.numMic
+                for out = 1:obj.numSrc
                     reset(obj.filters{out, inp});
                 end
             end

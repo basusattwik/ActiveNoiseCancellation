@@ -1,55 +1,33 @@
 close all
 clearvars
 clc
+
 %% Setup
 
 % Simulation input file
 simInput = '/Users/sattwikbasu/Repos/ActiveNoiseCancellation/Data/Input/MATFiles/ancSimInput.mat';
 
-% Algorithm tuning
-fxlmsProp.step = 0.2;
-fxlmsProp.leak = 0.0001;
-fxlmsProp.normweight = 1;
-fxlmsProp.smoothing  = 0.997;
-fxlmsProp.filterLen  = 300;
-
-lmsProp.step = 0.04;
-lmsProp.leak = 0.00001;
-lmsProp.normweight = 0.1;
-lmsProp.smoothing  = 0.997;
-lmsProp.filterLen  = 300;
-
 %% Run algorithm
 
+% Main ANC class
 anc = classAncSim(simInput);
 
-disp('--- Setting up the algorithms');
-anc = anc.setupSystemObj(fxlmsProp, lmsProp);
-anc = anc.resetBuffers();
+% Set algorithm tuning
+[fxlmsProp, lmsProp] = getAncTuning();
 
-disp('--- Measuring Impulse Response');
-tic;
-bCopy = false;
-anc   = anc.measureIr(bCopy);
-toc;
-
-disp('--- Running Simulation');
-tic;
-[anc, simData] = anc.ancSimCore();
-toc;
+% Run simulation
+[anc, simData] = anc.runAncSim(fxlmsProp, lmsProp);
 
 %% Generate plots
 
-disp('--- Plotting');
 plt = classAncPlots(simData);
-plt.genTimeDomainPlots();
-plt.genFreqDomainPlots();
+plt.genAllPlots();
 
 %% Close out
 
 release(anc.fxlms);
 release(anc.lms);
-anc = [];
+anc = []; 
 plt = [];
 
 disp('Done!');

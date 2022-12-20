@@ -7,14 +7,14 @@ clc
 %% Define sim constants
 
 fs = 6000; % 6 kHz sampling rate
-noiseType = 'tonal';
+noiseType = 'rand';
 
 %% Algorithm Tuning
 
 if strcmpi(noiseType, 'rand')
     mu_fxlms    = 0.001; % for rand
     gamma_fxlms = 0.001;
-    normK = 0.001;
+    normK = 0.01;
 
 elseif strcmpi(noiseType, 'tonal')
     mu_fxlms    = 0.0019;
@@ -93,7 +93,7 @@ xex    = randn(fs * extime, 1);
 xexfilt = filter(secPathCoef, 1, xex);
 xexfilt = xexfilt + 0.001 * randn(fs * extime, 1); % add sensor self noise
 
-lms = sysLMS('stepsize', 0.04, 'leakage', 0.001, 'normweight', 1, 'smoothing', 0.97, 'filterlen', 300);
+lms = sysLMS('stepsize', 0.04, 'leakage', 0.001, 'normweight', 1, 'smoothing', 0.97, 'filterLen', 300);
 
 for i = 1:length(xex)
 

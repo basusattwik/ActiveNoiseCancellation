@@ -82,7 +82,7 @@ classdef classAncPlots < handle
                     legend('Primary Noise', 'Antinoise', 'Error');
                     title(['Mic: ', num2str(err)]);
             end
-            title(tl, 'Noise Cancellation');
+            title(tl, 'Time Domain');
             linkaxes(ax, 'xy')
         end
 
@@ -90,35 +90,58 @@ classdef classAncPlots < handle
             %GENFREQDOMAINPLOTS
 
             % Calculate frequency domain data
-            winLen  = 1024;
-            overlap = 512;
-            fftLen  = 2048;
+            winLen  = 512;
+            overlap = 256;
+            fftLen  = 1024;
             
             % for residual noise, wait for a few seconds and then compute PSD to ensure
             % convergence
             waitTime = 5; % sec
             
-            [obj.psdPrimary,  fx] = pwelch(obj.primary, winLen, overlap, fftLen, obj.fs);
-            [obj.psdAntinoise, ~] = pwelch(obj.antinoise, winLen, overlap, fftLen, obj.fs);
+            [obj.psdPrimary,  fx] = pwelch(obj.primary(waitTime * obj.fs:end, :), winLen, overlap, fftLen, obj.fs);
+            [obj.psdAntinoise, ~] = pwelch(obj.antinoise(waitTime * obj.fs:end, :), winLen, overlap, fftLen, obj.fs);
             [obj.psdError, ~]     = pwelch(obj.error(waitTime * obj.fs:end, :), winLen, overlap, fftLen, obj.fs);
 
+            % PSD Plots
             figure
             tl = tiledlayout('flow');
             ax = zeros(1, obj.numErr);
 
             for err = 1:obj.numErr
                 ax(err) = nexttile;
-                    plot(fx, 10*log10(obj.psdPrimary(:, err)), 'LineWidth', 1.1);
+                    plot(fx, 10*log10(obj.psdPrimary(:, err)), 'LineWidth', 1.2);
                     hold on;
-                    plot(fx, 10*log10(obj.psdAntinoise(:, err)), 'LineWidth', 1.1);
-                    plot(fx, 10*log10(obj.psdError(:, err)), 'LineWidth', 1.1);
+                    plot(fx, 10*log10(obj.psdAntinoise(:, err)), 'LineWidth', 1.2);
+                    plot(fx, 10*log10(obj.psdError(:, err)), 'LineWidth', 1.2);
                     grid on; grid minor;
                     xlabel('Frequency [Hz]'); ylabel('Power [dB]');
                     legend('Primary Noise', 'Antinoise', 'Error');
                     title(['Mic: ', num2str(err)]);
             end
-            title(tl, 'Noise Cancellation PSD');
+            title(tl, 'Power Spectral Densities');
             linkaxes(ax, 'xy')
+
+            % Cancellation Plots
+            figure
+            tl = tiledlayout('flow');
+            ax = zeros(1, obj.numErr);
+
+            for err = 1:obj.numErr
+                ax(err) = nexttile;
+                    plot(fx, 10*log10(obj.psdPrimary(:, err))- 10*log10(obj.psdError(:, err)), 'LineWidth', 1.2);
+                    grid on; grid minor;
+                    xlabel('Frequency [Hz]'); ylabel('Power [dB]');
+                    xlim([20, fx(end)]);
+                    title(['Mic: ', num2str(err)]);
+            end
+            title(tl, 'Noise Cancellation');
+            linkaxes(ax, 'xy')
+        end
+
+        function genAllPlots(obj)
+            % GENALLPLOTS
+            obj.genTimeDomainPlots();
+            obj.genFreqDomainPlots();
         end
     end
 end

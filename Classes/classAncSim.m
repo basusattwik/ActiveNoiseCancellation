@@ -49,10 +49,16 @@ classdef classAncSim
 
     methods
         function obj = classAncSim(filePath)
-            %UNTITLED Construct an instance of this class
+            %CLASSANCSIM Construct an instance of this class
             %   Detailed explanation goes here
 
             load(filePath, 'ancSimInput');
+
+            disp('Starting simulation ...');
+            disp(['Speakers: ', num2str(ancSimInput.config.numSpk), ', ', ...
+                  'Error Mics: ', num2str(ancSimInput.config.numErr), ', ', ...
+                  'Ref Mics: ', num2str(ancSimInput.config.numRef), ', ', ...
+                  'Sources: ', num2str(ancSimInput.config.numSrc)]);
 
             % System config
             obj.config.numSrc = ancSimInput.config.numSrc;
@@ -102,18 +108,18 @@ classdef classAncSim
                              'filterLen',  lmsProp.filterLen);
 
             % Setup Multi-channel convolvers
-            obj.priPath = sysMimoConv('numInp',   obj.config.numErr, ...
-                                      'numOut',   obj.config.numSrc, ...
+            obj.priPath = sysMimoConv('numMic',   obj.config.numErr, ...
+                                      'numSrc',   obj.config.numSrc, ...
                                       'blockLen', obj.config.blockLen, ...
                                       'filters',  obj.paths.priPathFilters);
 
-            obj.secPath = sysMimoConv('numInp',   obj.config.numErr, ...
-                                      'numOut',   obj.config.numSpk, ...
+            obj.secPath = sysMimoConv('numMic',   obj.config.numErr, ...
+                                      'numSrc',   obj.config.numSpk, ...
                                       'blockLen', obj.config.blockLen, ...
                                       'filters',  obj.paths.secPathFilters);
 
-            obj.refPath = sysMimoConv('numInp',   obj.config.numRef, ...
-                                      'numOut',   obj.config.numSrc, ...
+            obj.refPath = sysMimoConv('numMic',   obj.config.numRef, ...
+                                      'numSrc',   obj.config.numSrc, ...
                                       'blockLen', obj.config.blockLen, ...
                                       'filters',  obj.paths.refPathFilters);
         end
@@ -145,31 +151,40 @@ classdef classAncSim
 
                 case false % Measure IR using LMS 
 
-                % Initialize excitation signal generator
-                T   = 10; % 10 sec
-                len = obj.config.fs * T;
-                noise = dsp.ColoredNoise('white', 'SamplesPerFrame', obj.config.blockLen, 'NumChannels', obj.config.numSpk);
-                
-                % Adaptively estimate secondary paths
-                for i = 1:len
+                    % Initialize excitation signal generator
+                    T   = 10; % 10 sec
+                    len = obj.config.fs * T;
+                    noise = dsp.ColoredNoise('white', 'SamplesPerFrame', obj.config.blockLen, 'NumChannels', obj.config.numSpk);
+                    
+                    % Wait bar
+                    wbar = waitbar(0, 'Please wait', 'Name','Measuring IR...',...
+                                  'CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
+                    % Adaptively estimate secondary paths
+                    for i = 1:len
+        
+                        % Excitation signal
+                        x = noise();
+                    
+                        % Simulate secondary path
+                        obj.output = obj.secPath.step(x);
+                    
+                        % Call LMS algorithm 
+                        obj.lms.step(x, obj.output);
     
-                    % Excitation signal
-                    x = noise();
-                
-                    % Simulate secondary path
-                    obj.output = obj.secPath.step(x);
-                
-                    % Call LMS algorithm 
-                    obj.lms.step(x, obj.output);
-                end
+                        % Update waitbar and message
+                        if getappdata(wbar, 'canceling')
+                            break
+                        end      
+                        if mod(i, 0.5 * obj.config.fs) == 0
+                            waitbar(i/len)
+                        end
+                    end
+
+                delete(wbar);
     
                 % Set estimated secondary path filters in FxLMS algorithm
                 obj.fxlms.estSecPathCoeff     = obj.lms.coeffs;
-                obj.fxlms.estSecPathFilterLen = obj.lms.filterLen;
-    
-                % Reset all buffers
-                obj = resetBuffers(obj);
-                obj.secPath.reset();
+                obj.fxlms.estSecPathFilterLen = obj.lms.filterLen; 
             end
         end
 
@@ -221,8 +236,10 @@ classdef classAncSim
                 % Update waitbar and message
                 if getappdata(wbar, 'canceling')
                     break
-                end                
-                waitbar(i/totalSamples)
+                end    
+                if mod(i, 0.5 * obj.config.fs) == 0 % Update waitbar every 0.5 sec worth of data
+                    waitbar(i/totalSamples)
+                end
             end
 
             delete(wbar);
@@ -238,6 +255,30 @@ classdef classAncSim
             simData.secPath = obj.paths.secPathFilters;
 
             simData.fs = obj.config.fs;
+            simData.fxlms = obj.fxlms;
+            simData.lms   = obj.lms;
+        end
+
+        function [obj, simData] = runAncSim(obj, fxlmsProp, lmsProp, bCopy)
+            %RUNANCSIM
+
+            if nargin < 4
+                bCopy = false;
+            end
+            
+            disp('--- Setting up the algorithms');
+            obj = obj.setupSystemObj(fxlmsProp, lmsProp);
+            obj = obj.resetBuffers();
+            
+            disp('--- Measuring Impulse Response');
+            obj = obj.measureIr(bCopy);
+            obj = resetBuffers(obj);
+            obj.secPath.reset();
+            
+            disp('--- Running Simulation');
+            tic;
+            [obj, simData] = obj.ancSimCore();
+            toc;
         end
     end
 end
