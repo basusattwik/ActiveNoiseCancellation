@@ -4,9 +4,10 @@ classdef sysFbFxLMS < matlab.System
     % Public, tunable properties
     properties
 
-        % system setup
+        % system setup (NOTE: These are unused. They are there only for
+        % compatibility with the constructors of MIMO algorithms)
         numRef = 1;
-        numMic = 1;
+        numErr = 1;
         numSpk = 1;
 
         % adaptive filter tuning
@@ -18,6 +19,9 @@ classdef sysFbFxLMS < matlab.System
         % switches
         bfreezecoeffs(1, 1)logical = false; % bool to freeze coeffients
 
+        % Feedback architecture
+        bFeedback = true;
+
     end
 
     % Public, non-tunable properties
@@ -28,18 +32,18 @@ classdef sysFbFxLMS < matlab.System
 
     % Public, non-tunable properties
     properties(Nontunable)
-        estSecPathCoeff1 = [];
+        estSecPathCoeff  = [];
         estSecPathCoeff2 = [];
     end
 
     properties(DiscreteState)
         filterCoeff; % adaptive FIR filter coefficients
         filterState; % buffered reference signal        
-        estSecPathState1; % used for generating filtered reference
+        estSecPathState;  % used for generating filtered reference
         estSecPathState2; % used for estimating the primary noise
         filtRefState;
         estPriNoise;
-        output;
+        prevOutput;
         powRefHist; % smoothed power of reference signal
     end
 
@@ -61,23 +65,23 @@ classdef sysFbFxLMS < matlab.System
 
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
-            obj.estSecPathCoeff2 = obj.estSecPathCoeff1;
+            obj.estSecPathCoeff2 = obj.estSecPathCoeff;
         end
         
-        function obj = stepImpl(obj, error) % inputs should be ref and err
+        function output = stepImpl(obj, error) % inputs should be ref and err
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states.
 
             % Get estimated primary noise
-            obj.estSecPathState2 = [obj.output; obj.estSecPathState2(1:end-1, 1)];
-            obj.estPriNoise = error + obj.estSecPathCoeff2.' * obj.estSecPathState2;
+            obj.estSecPathState2 = [obj.prevOutput; obj.estSecPathState2(1:end-1, 1)];
+            obj.estPriNoise = error + squeeze(obj.estSecPathCoeff2).' * obj.estSecPathState2;
         
             % Update state vector of adaptive filter and filtered reference signal
-            obj.estSecPathState1 = [obj.estPriNoise; obj.estSecPathState1(1:end-1, 1)];
-            obj.filterState = [obj.estPriNoise; obj.filterState(1:end-1, 1)];
+            obj.estSecPathState = [obj.estPriNoise; obj.estSecPathState(1:end-1, 1)];
+            obj.filterState     = [obj.estPriNoise; obj.filterState(1:end-1, 1)];
 
             % Get filtered reference signal
-            tempFiltOutput   = obj.estSecPathCoeff1.' * obj.estSecPathState1;
+            tempFiltOutput   = squeeze(obj.estSecPathCoeff).' * obj.estSecPathState;
             obj.filtRefState = [tempFiltOutput; obj.filtRefState(1:end-1,1)];
         
             % Normalize stepsize
@@ -91,7 +95,8 @@ classdef sysFbFxLMS < matlab.System
             end
 
             % Get output signal
-            obj.output = obj.filterCoeff.' * obj.filterState;
+            output = obj.filterCoeff.' * obj.filterState;
+            obj.prevOutput = output;
         end 
 
         function resetImpl(obj)
@@ -99,10 +104,10 @@ classdef sysFbFxLMS < matlab.System
             obj.filterCoeff      = zeros(obj.filterLen, 1); % adaptive FIR filter coefficients
             obj.filterState      = zeros(obj.filterLen, 1); % buffered reference signal
             obj.filtRefState     = zeros(obj.estSecPathFilterLen, 1);
-            obj.estSecPathState1 = zeros(obj.estSecPathFilterLen, 1); 
+            obj.estSecPathState  = zeros(obj.estSecPathFilterLen, 1); 
             obj.estSecPathState2 = zeros(obj.estSecPathFilterLen, 1);
             obj.estPriNoise = 0;
-            obj.output      = 0;
+            obj.prevOutput  = 0;
             obj.powRefHist  = 0; % smoothed power of reference signal
         end
     end

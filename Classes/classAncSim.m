@@ -31,7 +31,7 @@ classdef classAncSim
 
     properties
         % Adaptive Filter System Objects
-        fxlms;
+        ancAlgo;
 
         % Acoustic Sim System Objects
         priPath;
@@ -44,6 +44,9 @@ classdef classAncSim
         antinoise;
         reference;
         output;
+
+        % Check for feedback
+        bFeedback = false;
     end
 
     methods
@@ -79,23 +82,23 @@ classdef classAncSim
             obj.paths.secPathFilters = ancSimInput.secPathFilters;
             
             % Input signals (sources)
-            obj.signals.noise = ancSimInput.noiseSource;
+            obj.signals.noise   = ancSimInput.noiseSource;
             obj.signals.simTime = ancSimInput.simTime;
 
         end
 
-        function obj = setupSystemObj(obj, fxlmsProp)
+        function obj = setupSystemObj(obj, ancAlgo, ancAlgoTune)
             %SETUPSYSTEMObj
 
-            % Setup FxLMS Algorithm
-            obj.fxlms = sysMimoFxLMS('numRef',     obj.config.numRef, ...
-                                     'numErr',     obj.config.numErr, ...
-                                     'numSpk',     obj.config.numSpk, ...
-                                     'stepsize',   fxlmsProp.step, ...
-                                     'leakage',    fxlmsProp.leak, ...
-                                     'normweight', fxlmsProp.normweight, ...
-                                     'smoothing',  fxlmsProp.smoothing, ...
-                                     'filterLen',  fxlmsProp.filterLen);
+            % Setup ANC Algorithm
+            obj.ancAlgo = ancAlgo('numRef',     obj.config.numRef, ...
+                                  'numErr',     obj.config.numErr, ...
+                                  'numSpk',     obj.config.numSpk, ...
+                                  'stepsize',   ancAlgoTune.step,  ...
+                                  'leakage',    ancAlgoTune.leak,  ...
+                                  'normweight', ancAlgoTune.normweight, ...
+                                  'smoothing',  ancAlgoTune.smoothing, ...
+                                  'filterLen',  ancAlgoTune.filterLen);
 
             % Setup Multi-channel convolvers
             obj.priPath = sysMimoConv('numMic',   obj.config.numErr, ...
@@ -125,7 +128,7 @@ classdef classAncSim
             obj.output    = zeros(obj.config.blockLen, obj.config.numSpk);
         end
 
-        function obj = measureIr(obj, msrIrProp, bCopy)
+            function obj = measureIr(obj, msrIrTune, bCopy)
             %MEASUREIR
 
             switch bCopy
@@ -134,15 +137,15 @@ classdef classAncSim
 
                     for spk = 1:obj.config.numSpk
                         for err = 1:obj.config.numErr
-                            obj.fxlms.estSecPathCoeff(spk, err, :) = obj.paths.secPathFilters{spk, err}.Numerator(1:obj.lms.filterLen);
+                            obj.ancAlgo.estSecPathCoeff(spk, err, :) = obj.paths.secPathFilters{spk, err}.Numerator(1:obj.lms.filterLen);
                         end
                     end
-                    obj.fxlms.estSecPathFilterLen = numel(obj.paths.secPathFilters{1, 1}.Numerator(1:obj.lms.filterLen));
+                    obj.ancAlgo.estSecPathFilterLen = numel(obj.paths.secPathFilters{1, 1}.Numerator(1:obj.lms.filterLen));
 
                 case false % Measure IR using LMS 
 
                     % Generate sine sweep
-                    swp = sweeptone(msrIrProp.swpTime, msrIrProp.silnTime, obj.config.fs, 'SweepFrequencyRange', [msrIrProp.lowFreq, obj.config.fs/2]);
+                    swp = sweeptone(msrIrTune.swpTime, msrIrTune.silnTime, obj.config.fs, 'SweepFrequencyRange', [msrIrTune.lowFreq, obj.config.fs/2]);
 
                     for spk = 1:obj.config.numSpk
                         for err = 1:obj.config.numErr
@@ -152,10 +155,10 @@ classdef classAncSim
 
                             % Estimate Impulse Response (Use Farina's method)
                             tmp = impzest(swp, rec);
-                            obj.fxlms.estSecPathCoeff(spk, err, :) = tmp(1:msrIrProp.filtLen, 1); 
+                            obj.ancAlgo.estSecPathCoeff(spk, err, :) = tmp(1:msrIrTune.filtLen, 1); 
                         end
                     end
-                    obj.fxlms.estSecPathFilterLen = msrIrProp.filtLen;
+                    obj.ancAlgo.estSecPathFilterLen = msrIrTune.filtLen;
 
                     % Reset secondary path filters
                     for spk = 1:obj.config.numSpk
@@ -170,7 +173,7 @@ classdef classAncSim
             %ANCSIMCORE
 
             % Preallocate arrays
-            totalSamples  = obj.signals.simTime * obj.config.fs;
+            totalSamples = obj.signals.simTime * obj.config.fs;
             simData.totalSamples  = totalSamples;
             simData.savePrimary   = zeros(totalSamples, obj.config.numErr);
             simData.saveReference = zeros(totalSamples, obj.config.numRef);
@@ -192,11 +195,15 @@ classdef classAncSim
                 % Calc error i.e. residual noise
                 obj.error = obj.primary - obj.antinoise;
             
-                % Simulate reference path acoustics
-                obj.reference = obj.refPath.step(noise(blockInd, :));
-            
-                % Call FxLMS algorithm
-                obj.output = obj.fxlms.step(obj.reference, obj.error); 
+                if ~obj.ancAlgo.bFeedback
+                    % Simulate reference path acoustics
+                    obj.reference = obj.refPath.step(noise(blockInd, :));
+
+                    % Call ANC algorithm step function
+                    obj.output = obj.ancAlgo.step(obj.reference, obj.error); 
+                else
+                    obj.output = obj.ancAlgo.step(obj.error); 
+                end
             
                 % Simulate secondary path acoustics
                 obj.antinoise = obj.secPath.step(obj.output);
@@ -233,22 +240,22 @@ classdef classAncSim
             simData.secPath = obj.paths.secPathFilters;
 
             simData.fs = obj.config.fs;
-            simData.fxlms = obj.fxlms;
+            simData.fxlms = obj.ancAlgo;
         end
 
-        function [obj, simData] = runAncSim(obj, fxlmsProp, msrIrProp, bCopy)
+            function [obj, simData] = runAncSim(obj, ancAlgo, ancAlgoTune, msrIrTune, bCopy)
             %RUNANCSIM
 
-            if nargin < 4
+            if nargin < 5
                 bCopy = false;
             end
             
             disp('--- Setting up the algorithms');
-            obj = obj.setupSystemObj(fxlmsProp);
+            obj = obj.setupSystemObj(ancAlgo, ancAlgoTune);
             obj = obj.resetBuffers();
             
             disp('--- Measuring Impulse Response');
-            obj = obj.measureIr(msrIrProp, bCopy);
+            obj = obj.measureIr(msrIrTune, bCopy);
             obj = resetBuffers(obj);
             obj.secPath.reset();
             

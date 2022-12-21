@@ -4,11 +4,12 @@ classdef sysFxLMS < matlab.System
     % Public, tunable properties
     properties
 
-        % system setup
+        % system setup (NOTE: These are unused. They are there only for
+        % compatibility with the constructors of MIMO algorithms)
         numRef = 1;
-        numMic = 1;
+        numErr = 1;
         numSpk = 1;
-
+        
         % adaptive filter tuning
         stepsize   = 0.01; % adaptive filter stepsize
         leakage    = 0.001; % adaptive filter leakage
@@ -18,6 +19,8 @@ classdef sysFxLMS < matlab.System
         % switches
         bfreezecoeffs(1, 1)logical = false; % bool to freeze coeffients
 
+        % Feedback architecture
+        bFeedback = false;
     end
 
     % Public, non-tunable properties
@@ -61,10 +64,10 @@ classdef sysFxLMS < matlab.System
         
             % Update state vector of adaptive filter and filtered reference signal
             obj.estSecPathState = [ref; obj.estSecPathState(1:end-1, 1)];
-            obj.filterState = [ref; obj.filterState(1:end-1, 1)];
+            obj.filterState     = [ref; obj.filterState(1:end-1, 1)];
 
             % Get filtered reference signal
-            tempFiltOutput   = obj.estSecPathCoeff.' * obj.estSecPathState;
+            tempFiltOutput   = squeeze(obj.estSecPathCoeff).' * obj.estSecPathState;
             obj.filtRefState = [tempFiltOutput; obj.filtRefState(1:end-1,1)];
         
             % Normalize stepsize
@@ -83,10 +86,10 @@ classdef sysFxLMS < matlab.System
 
         function resetImpl(obj)
             % Initialize / reset discrete-state properties
-            obj.filterCoeff     = zeros(obj.filterLen, 1); % zeros(obj.numRef, obj.numSpk, obj.filterLen);       % adaptive FIR filter coefficients
-            obj.filterState     = zeros(obj.filterLen, 1); %zeros(obj.numRef, obj.numSpk, obj.filterLen); % buffered reference signal
-            obj.filtRefState    = zeros(obj.estSecPathFilterLen, 1); % zeros(obj.numRef, obj.estSecPathFilterLen);
-            obj.estSecPathState = zeros(obj.estSecPathFilterLen, 1); %zeros(obj.numSpk, obj.numMic, obj.estSecPathFilterLen);
+            obj.filterCoeff     = zeros(obj.filterLen, 1); % adaptive FIR filter coefficients
+            obj.filterState     = zeros(obj.filterLen, 1); % buffered reference signal
+            obj.filtRefState    = zeros(obj.estSecPathFilterLen, 1); 
+            obj.estSecPathState = zeros(obj.estSecPathFilterLen, 1); 
             obj.powRefHist      = 0; % smoothed power of reference signal
         end
     end

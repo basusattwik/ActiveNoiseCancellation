@@ -18,6 +18,8 @@ classdef sysMimoFxLMS < matlab.System
         % switches
         bfreezecoeffs(1, 1)logical = false; % bool to freeze coeffients
 
+        % Feedback architecture
+        bFeedback = false;
     end
 
     % Public, non-tunable properties
