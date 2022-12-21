@@ -31,7 +31,6 @@ classdef classAncSim
 
     properties
         % Adaptive Filter System Objects
-        lms;
         fxlms;
 
         % Acoustic Sim System Objects
@@ -85,7 +84,7 @@ classdef classAncSim
 
         end
 
-        function obj = setupSystemObj(obj, fxlmsProp, lmsProp)
+        function obj = setupSystemObj(obj, fxlmsProp)
             %SETUPSYSTEMObj
 
             % Setup FxLMS Algorithm
@@ -97,15 +96,6 @@ classdef classAncSim
                                      'normweight', fxlmsProp.normweight, ...
                                      'smoothing',  fxlmsProp.smoothing, ...
                                      'filterLen',  fxlmsProp.filterLen);
-
-            % Setup LMS Algorithm
-            obj.lms = sysLMS('numSpk',     obj.config.numSpk, ...
-                             'numErr',     obj.config.numErr, ...
-                             'stepsize',   lmsProp.step, ...
-                             'leakage',    lmsProp.leak, ...
-                             'normweight', lmsProp.normweight, ...
-                             'smoothing',  lmsProp.smoothing, ...
-                             'filterLen',  lmsProp.filterLen);
 
             % Setup Multi-channel convolvers
             obj.priPath = sysMimoConv('numMic',   obj.config.numErr, ...
@@ -135,15 +125,15 @@ classdef classAncSim
             obj.output    = zeros(obj.config.blockLen, obj.config.numSpk);
         end
 
-        function obj = measureIr(obj, bCopy)
+        function obj = measureIr(obj, msrIrProp, bCopy)
             %MEASUREIR
 
             switch bCopy
 
                 case true % Copy coefficients from secondary path IR model
 
-                    for spk = obj.config.numSpk
-                        for err = obj.config.numErr
+                    for spk = 1:obj.config.numSpk
+                        for err = 1:obj.config.numErr
                             obj.fxlms.estSecPathCoeff(spk, err, :) = obj.paths.secPathFilters{spk, err}.Numerator(1:obj.lms.filterLen);
                         end
                     end
@@ -151,40 +141,28 @@ classdef classAncSim
 
                 case false % Measure IR using LMS 
 
-                    % Initialize excitation signal generator
-                    T   = 10; % 10 sec
-                    len = obj.config.fs * T;
-                    noise = dsp.ColoredNoise('white', 'SamplesPerFrame', obj.config.blockLen, 'NumChannels', obj.config.numSpk);
-                    
-                    % Wait bar
-                    wbar = waitbar(0, 'Please wait', 'Name','Measuring IR...',...
-                                  'CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
-                    % Adaptively estimate secondary paths
-                    for i = 1:len
-        
-                        % Excitation signal
-                        x = noise();
-                    
-                        % Simulate secondary path
-                        obj.output = obj.secPath.step(x);
-                    
-                        % Call LMS algorithm 
-                        obj.lms.step(x, obj.output);
-    
-                        % Update waitbar and message
-                        if getappdata(wbar, 'canceling')
-                            break
-                        end      
-                        if mod(i, 0.5 * obj.config.fs) == 0
-                            waitbar(i/len)
+                    % Generate sine sweep
+                    swp = sweeptone(msrIrProp.swpTime, msrIrProp.silnTime, obj.config.fs, 'SweepFrequencyRange', [msrIrProp.lowFreq, obj.config.fs/2]);
+
+                    for spk = 1:obj.config.numSpk
+                        for err = 1:obj.config.numErr
+
+                            % Filter sweep through secondary path
+                            rec = obj.paths.secPathFilters{spk, err}(swp);
+
+                            % Estimate Impulse Response (Use Farina's method)
+                            tmp = impzest(swp, rec);
+                            obj.fxlms.estSecPathCoeff(spk, err, :) = tmp(1:msrIrProp.filtLen, 1); 
                         end
                     end
+                    obj.fxlms.estSecPathFilterLen = msrIrProp.filtLen;
 
-                delete(wbar);
-    
-                % Set estimated secondary path filters in FxLMS algorithm
-                obj.fxlms.estSecPathCoeff     = obj.lms.coeffs;
-                obj.fxlms.estSecPathFilterLen = obj.lms.filterLen; 
+                    % Reset secondary path filters
+                    for spk = 1:obj.config.numSpk
+                        for err = 1:obj.config.numErr
+                            reset(obj.paths.secPathFilters{spk, err});
+                        end
+                    end
             end
         end
 
@@ -256,10 +234,9 @@ classdef classAncSim
 
             simData.fs = obj.config.fs;
             simData.fxlms = obj.fxlms;
-            simData.lms   = obj.lms;
         end
 
-        function [obj, simData] = runAncSim(obj, fxlmsProp, lmsProp, bCopy)
+        function [obj, simData] = runAncSim(obj, fxlmsProp, msrIrProp, bCopy)
             %RUNANCSIM
 
             if nargin < 4
@@ -267,11 +244,11 @@ classdef classAncSim
             end
             
             disp('--- Setting up the algorithms');
-            obj = obj.setupSystemObj(fxlmsProp, lmsProp);
+            obj = obj.setupSystemObj(fxlmsProp);
             obj = obj.resetBuffers();
             
             disp('--- Measuring Impulse Response');
-            obj = obj.measureIr(bCopy);
+            obj = obj.measureIr(msrIrProp, bCopy);
             obj = resetBuffers(obj);
             obj.secPath.reset();
             

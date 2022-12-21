@@ -13,10 +13,10 @@ simInput = '/Users/sattwikbasu/Repos/ActiveNoiseCancellation/Data/Input/MATFiles
 anc = classAncSim(simInput);
 
 % Set algorithm tuning
-[fxlmsProp, lmsProp] = getAncTuning();
+[fxlmsProp, msrIrProp] = getAncTuning();
 
 % Run simulation
-[anc, simData] = anc.runAncSim(fxlmsProp, lmsProp);
+[anc, simData] = anc.runAncSim(fxlmsProp, msrIrProp);
 
 %% Generate plots
 
@@ -26,7 +26,6 @@ plt.genAllPlots();
 %% Close out
 
 release(anc.fxlms);
-release(anc.lms);
 anc = []; 
 plt = [];
 

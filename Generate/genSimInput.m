@@ -14,8 +14,8 @@ clc
 fs = 6000;
 
 % Acoustic properties
-roomDim    = [5, 5, 6];                               % Room dimensions    [x y z] (m)
-sources    = [1, 2, 2; 0, 3.5, 2; 2, 2.5, 2; 2, 2.7, 2];     % Source position    [x y z] (m)
+roomDim    = [5, 5, 6];                                  % Room dimensions    [x y z] (m)
+sources    = [1, 2, 2; 0, 3.5, 2; 2, 2.5, 2; 2, 2.7, 2]; % Source position    [x y z] (m)
 refMics    = [4, 2, 2; 4, 2.2, 2];                    % Reference mic position [x y z] (m)
 errMics    = [4.4, 2, 2; 4.2, 2.2, 2];                % Error mic position [x y z] (m)
 speakers   = [4.2, 2, 2; 4.1, 2.2, 2];   % Speaker position   [x y z] (m)
