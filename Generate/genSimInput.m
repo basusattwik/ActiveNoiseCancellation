@@ -15,10 +15,10 @@ fs = 6000;
 
 % Acoustic properties
 roomDim    = [5, 5, 6];                                  % Room dimensions    [x y z] (m)
-sources    = [1, 2, 2; 0, 3.5, 2; 2, 2.5, 2; 2, 2.7, 2]; % Source position    [x y z] (m)
-refMics    = [4, 2, 2; 4, 2.2, 2];                    % Reference mic position [x y z] (m)
-errMics    = [4.4, 2, 2; 4.2, 2.2, 2];                % Error mic position [x y z] (m)
-speakers   = [4.2, 2, 2; 4.1, 2.2, 2];   % Speaker position   [x y z] (m)
+sources    = [1, 2, 2];% 0, 3.5, 2; 2, 2.5, 2; 2, 2.7, 2]; % Source position    [x y z] (m)
+refMics    = [4, 2, 2];% 4, 2.2, 2];                    % Reference mic position [x y z] (m)
+errMics    = [4.4, 2, 2];% 4.2, 2.2, 2];                % Error mic position [x y z] (m)
+speakers   = [4.3, 2, 2];% 4.1, 2.2, 2];   % Speaker position   [x y z] (m)
 numTaps    = 1024;                         % Number of samples in IR
 soundSpeed = 340;                          % Speed of sound in  (m/s)
 reverbTime = 0.4;                          % Reverberation time (s)                  
@@ -34,31 +34,31 @@ numErr = size(errMics,  1);  % Number of error mics
 noise  = zeros(simTime * fs, numSrc);
 
 % % Source 1
-f   = [60, 150, 200, 250, 300];
-amp = [0.1, 0.08, 0.07, 0.065, 0.06];
-phs = [0, 0, 0, 0, 0];
+f   = [80, 150];%, 200, 250, 300];
+amp = [0.1, 0.08];%, 0.07, 0.065, 0.06];
+phs = [0, 0];%, 0, 0, 0];
 
 noise(:, 1) = imag(complexsin(fs, f, amp, phs, simTime));
 
 % Add other sources below:
 % You can also add .wav files
 
-% Source 2
-f   = [60, 150, 200, 250, 300];
-amp = [0.1, 0.08, 0.07, 0.065, 0.06];
-phs = [30, 24, 60, 10, 20];
-
-noise(:, 2) = real(complexsin(fs, f, amp, phs, simTime));
-
-% Source 3
-h = fir1(32, 700/(0.5 * fs));
-noise(:, 3) = 0.1 * filter(h, 1, rand(simTime * fs, 1));
-
-% Source 4
-[cry, cryFs] = audioread('Input/Signals/noise_train.wav');
-[p, q] = rat(fs / cryFs);
-cry    = resample(cry, p, q);
-noise(:, 4) = cry(1:simTime * fs, 1);
+% % Source 2
+% f   = [60, 150, 200, 250, 300];
+% amp = [0.1, 0.08, 0.07, 0.065, 0.06];
+% phs = [30, 24, 60, 10, 20];
+% 
+% noise(:, 2) = real(complexsin(fs, f, amp, phs, simTime));
+% 
+% % Source 3
+% h = fir1(32, 700/(0.5 * fs));
+% noise(:, 3) = 0.1 * filter(h, 1, rand(simTime * fs, 1));
+% 
+% % Source 4
+% [cry, cryFs] = audioread('Input/Signals/noise_train.wav');
+% [p, q] = rat(fs / cryFs);
+% cry    = resample(cry, p, q);
+% noise(:, 4) = cry(1:simTime * fs, 1);
 
 %% Transfer functions
 

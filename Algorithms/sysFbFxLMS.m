@@ -1,5 +1,5 @@
-classdef sysFxLMS < matlab.System
-    % SYSFXLMS Add summary here
+classdef sysFbFxLMS < matlab.System
+    % SYSFBFXLMS Add summary here
     
     % Public, tunable properties
     properties
@@ -9,7 +9,7 @@ classdef sysFxLMS < matlab.System
         numRef = 1;
         numErr = 1;
         numSpk = 1;
-        
+
         % adaptive filter tuning
         stepsize   = 0.01; % adaptive filter stepsize
         leakage    = 0.001; % adaptive filter leakage
@@ -18,6 +18,7 @@ classdef sysFxLMS < matlab.System
         
         % switches
         bfreezecoeffs(1, 1)logical = false; % bool to freeze coeffients
+
     end
 
     % Public, non-tunable properties
@@ -28,17 +29,21 @@ classdef sysFxLMS < matlab.System
 
     % Public, non-tunable properties
     properties(Nontunable)
-        estSecPathCoeff = [];
+        estSecPathCoeff  = [];
+        estSecPathCoeff2 = [];
 
         % Feedback architecture
-        bFeedback = false;
+        bFeedback = true;
     end
 
     properties(DiscreteState)
         filterCoeff; % adaptive FIR filter coefficients
         filterState; % buffered reference signal        
-        estSecPathState;
+        estSecPathState;  % used for generating filtered reference
+        estSecPathState2; % used for estimating the primary noise
         filtRefState;
+        estPriNoise;
+        prevOutput;
         powRefHist; % smoothed power of reference signal
     end
 
@@ -49,7 +54,7 @@ classdef sysFxLMS < matlab.System
 
     methods
         % Constructor
-        function obj = sysFxLMS(varargin)
+        function obj = sysFbFxLMS(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:})
         end
@@ -58,13 +63,22 @@ classdef sysFxLMS < matlab.System
     methods(Access = protected)
         %% Common functions
 
-        function output = stepImpl(obj, ref, error) % inputs should be ref and err
+        function setupImpl(obj)
+            % Perform one-time calculations, such as computing constants
+            obj.estSecPathCoeff2 = obj.estSecPathCoeff;
+        end
+        
+        function output = stepImpl(obj, error) % inputs should be ref and err
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states.
+
+            % Get estimated primary noise
+            obj.estSecPathState2 = [obj.prevOutput; obj.estSecPathState2(1:end-1, 1)];
+            obj.estPriNoise = error + squeeze(obj.estSecPathCoeff2).' * obj.estSecPathState2;
         
             % Update state vector of adaptive filter and filtered reference signal
-            obj.estSecPathState = [ref; obj.estSecPathState(1:end-1, 1)];
-            obj.filterState     = [ref; obj.filterState(1:end-1, 1)];
+            obj.estSecPathState = [obj.estPriNoise; obj.estSecPathState(1:end-1, 1)];
+            obj.filterState     = [obj.estPriNoise; obj.filterState(1:end-1, 1)];
 
             % Get filtered reference signal
             tempFiltOutput   = squeeze(obj.estSecPathCoeff).' * obj.estSecPathState;
@@ -82,15 +96,19 @@ classdef sysFxLMS < matlab.System
 
             % Get output signal
             output = obj.filterCoeff.' * obj.filterState;
+            obj.prevOutput = output;
         end 
 
         function resetImpl(obj)
             % Initialize / reset discrete-state properties
-            obj.filterCoeff     = zeros(obj.filterLen, 1); % adaptive FIR filter coefficients
-            obj.filterState     = zeros(obj.filterLen, 1); % buffered reference signal
-            obj.filtRefState    = zeros(obj.estSecPathFilterLen, 1); 
-            obj.estSecPathState = zeros(obj.estSecPathFilterLen, 1); 
-            obj.powRefHist      = 0; % smoothed power of reference signal
+            obj.filterCoeff      = zeros(obj.filterLen, 1); % adaptive FIR filter coefficients
+            obj.filterState      = zeros(obj.filterLen, 1); % buffered reference signal
+            obj.filtRefState     = zeros(obj.estSecPathFilterLen, 1);
+            obj.estSecPathState  = zeros(obj.estSecPathFilterLen, 1); 
+            obj.estSecPathState2 = zeros(obj.estSecPathFilterLen, 1);
+            obj.estPriNoise = 0;
+            obj.prevOutput  = 0;
+            obj.powRefHist  = 0; % smoothed power of reference signal
         end
     end
 end

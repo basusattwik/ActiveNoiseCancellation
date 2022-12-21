@@ -29,6 +29,9 @@ classdef sysMimoFxLMS < matlab.System
     % Public, non-tunable properties
     properties(Nontunable)
         estSecPathCoeff = [];
+        
+        % Feedback architecture
+        bFeedback = false;
     end
 
     properties(DiscreteState)
