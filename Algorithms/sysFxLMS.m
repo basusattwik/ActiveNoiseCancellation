@@ -64,7 +64,7 @@ classdef sysFxLMS < matlab.System
             obj.filterState = [ref; obj.filterState(1:end-1, 1)];
 
             % Get filtered reference signal
-            tempFiltOutput   = squeeze(obj.estSecPathCoeff).' * obj.estSecPathState;
+            tempFiltOutput   = obj.estSecPathCoeff.' * obj.estSecPathState;
             obj.filtRefState = [tempFiltOutput; obj.filtRefState(1:end-1,1)];
         
             % Normalize stepsize
