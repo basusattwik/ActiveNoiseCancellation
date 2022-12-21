@@ -2,17 +2,17 @@ close all
 clearvars
 clc
 
-%% Setup
+%% Choose simulation scenario and ANC algorithm
 
-% Simulation input file
+% Choose simulation input file
 simInput = '/Users/sattwikbasu/Repos/ActiveNoiseCancellation/Data/Input/MATFiles/ancSimInput.mat';
 
 % Choose Algorithm
-ancAlgo = @sysMimoFxLMS;
+ancAlgo = @sysFbFxLMS;
 
 %% Run algorithm
 
-% Main ANC class
+% Setup main ANC class
 anc = classAncSim(simInput);
 
 % Set algorithm tuning

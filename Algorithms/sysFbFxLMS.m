@@ -1,5 +1,5 @@
 classdef sysFbFxLMS < matlab.System
-    % CLASSFXLMSFILTER Add summary here
+    % SYSFBFXLMS Add summary here
     
     % Public, tunable properties
     properties
@@ -19,9 +19,6 @@ classdef sysFbFxLMS < matlab.System
         % switches
         bfreezecoeffs(1, 1)logical = false; % bool to freeze coeffients
 
-        % Feedback architecture
-        bFeedback = true;
-
     end
 
     % Public, non-tunable properties
@@ -34,6 +31,9 @@ classdef sysFbFxLMS < matlab.System
     properties(Nontunable)
         estSecPathCoeff  = [];
         estSecPathCoeff2 = [];
+
+        % Feedback architecture
+        bFeedback = true;
     end
 
     properties(DiscreteState)

@@ -57,10 +57,10 @@ classdef classAncSim
             load(filePath, 'ancSimInput');
 
             disp('Starting simulation ...');
-            disp(['Speakers: ', num2str(ancSimInput.config.numSpk), ', ', ...
+            disp(['Speakers: ',   num2str(ancSimInput.config.numSpk), ', ', ...
                   'Error Mics: ', num2str(ancSimInput.config.numErr), ', ', ...
-                  'Ref Mics: ', num2str(ancSimInput.config.numRef), ', ', ...
-                  'Sources: ', num2str(ancSimInput.config.numSrc)]);
+                  'Ref Mics: ',   num2str(ancSimInput.config.numRef), ', ', ...
+                  'Sources: ',    num2str(ancSimInput.config.numSrc)]);
 
             % System config
             obj.config.numSrc = ancSimInput.config.numSrc;
@@ -137,10 +137,10 @@ classdef classAncSim
 
                     for spk = 1:obj.config.numSpk
                         for err = 1:obj.config.numErr
-                            obj.ancAlgo.estSecPathCoeff(spk, err, :) = obj.paths.secPathFilters{spk, err}.Numerator(1:obj.lms.filterLen);
+                            obj.ancAlgo.estSecPathCoeff(spk, err, :) = obj.paths.secPathFilters{spk, err}.Numerator(1:msrIrTune.filtLen);
                         end
                     end
-                    obj.ancAlgo.estSecPathFilterLen = numel(obj.paths.secPathFilters{1, 1}.Numerator(1:obj.lms.filterLen));
+                    obj.ancAlgo.estSecPathFilterLen = msrIrTune.filtLen;
 
                 case false % Measure IR using LMS 
 
@@ -243,7 +243,7 @@ classdef classAncSim
             simData.fxlms = obj.ancAlgo;
         end
 
-            function [obj, simData] = runAncSim(obj, ancAlgo, ancAlgoTune, msrIrTune, bCopy)
+        function [obj, simData] = runAncSim(obj, ancAlgo, ancAlgoTune, msrIrTune, bCopy)
             %RUNANCSIM
 
             if nargin < 5
