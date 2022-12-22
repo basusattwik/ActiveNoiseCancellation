@@ -39,8 +39,8 @@ classdef sysHybridFxLMS < matlab.System
     properties(Nontunable)
         estSecPathCoeff  = [];
 
-        % Feedback architecture
-        bFeedback = true;
+        % Pure feedback architecture
+        bFeedback = false;
     end
 
     properties(DiscreteState)

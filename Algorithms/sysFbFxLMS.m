@@ -32,7 +32,7 @@ classdef sysFbFxLMS < matlab.System
         estSecPathCoeff  = [];
         estSecPathCoeff2 = [];
 
-        % Feedback architecture
+        % Pure feedback architecture
         bFeedback = true;
     end
 

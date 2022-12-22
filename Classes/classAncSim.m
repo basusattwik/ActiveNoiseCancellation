@@ -16,7 +16,10 @@ classdef classAncSim
                            'sources', [], ...
                            'refMics', [], ...
                            'errMics', [], ...
-                           'speakers', []);
+                           'speakers', [], ...
+                           'bSimheadphones', [], ...
+                           'lpfCutoff', [], ...
+                           'lpfOrder',  []);
 
         % System impulse responses for all acoustic paths
         paths = struct('priPathFilters', [], ...
@@ -45,6 +48,8 @@ classdef classAncSim
         reference;
         output;
 
+        % Simulate LPF effect of headphones
+        bSimheadphones = false;
     end
 
     methods
@@ -52,7 +57,7 @@ classdef classAncSim
             %CLASSANCSIM Construct an instance of this class
             %   Detailed explanation goes here
 
-            load(filePath, 'ancSimInput');
+            load(filePath, 'ancSimInput'); % TODO: Add checks to make sure file exists. 
 
             disp('Starting simulation ...');
             disp(['Speakers: ',   num2str(ancSimInput.config.numSpk), ', ', ...
@@ -73,6 +78,9 @@ classdef classAncSim
             obj.acoustics.refMics  = ancSimInput.acoustics.refMics;
             obj.acoustics.errMics  = ancSimInput.acoustics.errMics;
             obj.acoustics.speakers = ancSimInput.acoustics.speakers;
+            obj.acoustics.bSimheadphones = ancSimInput.acoustics.bSimheadphones;
+            obj.acoustics.lpfCutoff = ancSimInput.acoustics.lpfCutoff;
+            obj.acoustics.lpfOrder  = ancSimInput.acoustics.lpfOrder;
             
             % All IRs
             obj.paths.priPathFilters = ancSimInput.priPathFilters;
@@ -82,7 +90,6 @@ classdef classAncSim
             % Input signals (sources)
             obj.signals.noise   = ancSimInput.noiseSource;
             obj.signals.simTime = ancSimInput.simTime;
-
         end
 
         function obj = setupSystemObj(obj, ancAlgo, ancAlgoTune)
@@ -113,9 +120,9 @@ classdef classAncSim
 
             elseif strcmpi(func2str(ancAlgo), 'sysHybridFxLMS')
                 
-                obj.ancAlgo = ancAlgo('numRef',     obj.config.numRef, ...
-                                      'numErr',     obj.config.numErr, ...
-                                      'numSpk',     obj.config.numSpk, ...
+                obj.ancAlgo = ancAlgo('numRef',       obj.config.numRef, ...
+                                      'numErr',       obj.config.numErr, ...
+                                      'numSpk',       obj.config.numSpk, ...
                                       'ffstepsize',   ancAlgoTune.ffstep,  ...
                                       'ffleakage',    ancAlgoTune.ffleak,  ...
                                       'ffnormweight', ancAlgoTune.ffnormweight, ...
@@ -197,7 +204,7 @@ classdef classAncSim
             end
         end
 
-        function [obj, simData] = ancSimCore(obj, ancAlgo)
+        function [obj, simData] = ancSimCore(obj)
             %ANCSIMCORE
 
             % Preallocate arrays
@@ -213,12 +220,23 @@ classdef classAncSim
             wbar = waitbar(0, 'Please wait', 'Name','ANC Simulation...',...
                            'CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
 
+            % Setup filter to simulate headphones
+            if obj.acoustics.bSimheadphones
+                [b, a]   = butter(obj.acoustics.lpfOrder, obj.acoustics.lpfCutoff / (0.5 * obj.config.fs), 'low');
+                lpfState = [];
+            end
+
             blockInd = 1:obj.config.blockLen;
             noise = obj.signals.noise;
             for i = 1:obj.signals.simTime * obj.config.fs
         
                 % Simulate primary noise
                 obj.primary = obj.priPath.step(noise(blockInd, :));
+
+                % Add a LPF to primary noise simulate headphones
+                if obj.acoustics.bSimheadphones
+                    [obj.primary, lpfState] = filter(b, a, obj.primary, lpfState);
+                end
             
                 % Calc error i.e. residual noise
                 obj.error = obj.primary - obj.antinoise;
@@ -275,6 +293,8 @@ classdef classAncSim
             if nargin < 5
                 bCopy = false;
             end
+
+            disp(['ANC Algorithm: ', func2str(ancAlgo)]);
             
             disp('--- Setting up the algorithms');
             obj = obj.setupSystemObj(ancAlgo, ancAlgoTune);
@@ -287,7 +307,7 @@ classdef classAncSim
             
             disp('--- Running Simulation');
             tic;
-            [obj, simData] = obj.ancSimCore(ancAlgo);
+            [obj, simData] = obj.ancSimCore();
             toc;
         end
     end

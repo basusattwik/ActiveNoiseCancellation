@@ -30,7 +30,7 @@ classdef sysFxLMS < matlab.System
     properties(Nontunable)
         estSecPathCoeff = [];
 
-        % Feedback architecture
+        % Pure feedback architecture
         bFeedback = false;
     end
 
