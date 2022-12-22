@@ -1,5 +1,6 @@
 classdef sysFxLMS < matlab.System
-    % SYSFXLMS Add summary here
+    % SYSFXLMS System object implementation of adaptive feedforward FxLMS
+    % algorithm. This system object supports a SISO setup.
     
     % Public, tunable properties
     properties

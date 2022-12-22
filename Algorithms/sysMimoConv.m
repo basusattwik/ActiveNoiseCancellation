@@ -1,27 +1,20 @@
 classdef sysMimoConv < matlab.System
-    % SYSMIMOCONV Add summary here
-    %
-    % NOTE: When renaming the class name untitled5, the file name
-    % and constructor name must be updated to use the class name.
-    %
-    % This template includes most, but not all, possible properties,
-    % attributes, and methods that you can implement for a System object.
-
-    % Public, tunable properties
-    properties
-
-    end
+    % SYSMIMOCONV Multichannnel convolver to simulate the acoustics of a 
+    % MIMO speaker/source and microphone arrangement. The output from each
+    % speaker/souce is convolved with an impulse response and summed at
+    % each microphone. 
 
     % Public, non-tunable properties
     properties(Nontunable)
         numMic;
         numSrc;
         blockLen;
-        filters;
+        filters; % pre-measured impulse responses
     end
 
     properties(DiscreteState)
-        output;
+        % Total output for all microphones
+        output; 
     end
 
     % Pre-computed constants
@@ -39,13 +32,8 @@ classdef sysMimoConv < matlab.System
 
     methods(Access = protected)
         %% Common functions
-        function setupImpl(obj)
-            % Perform one-time calculations, such as computing constants
-        end
-
         function xout = stepImpl(obj, xin)
-            % Implement algorithm. Calculate y as a function of input u and
-            % discrete states. 
+            % Implement multichannel convolutionn algorithm. 
             obj.output(:) = 0;
             for mic = 1:obj.numMic
                 for src = 1:obj.numSrc
@@ -53,6 +41,7 @@ classdef sysMimoConv < matlab.System
                 end
             end
 
+            % Combined output from all speakers at each microphone
             xout = obj.output;
         end
 

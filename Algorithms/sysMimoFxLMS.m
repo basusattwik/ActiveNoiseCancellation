@@ -1,5 +1,6 @@
 classdef sysMimoFxLMS < matlab.System
-    % SYSMIMOFXLMS Add summary here
+    % SYSMIMOFXLMS System object implementation of adaptive feedforward FxLMS
+    % algorithm. This system object supports a MIMO setup.
     
     % Public, tunable properties
     properties
@@ -59,7 +60,7 @@ classdef sysMimoFxLMS < matlab.System
     methods(Access = protected)
         %% Common functions
 
-        function output = stepImpl(obj, reference, error) % inputs should be ref and err
+        function output = stepImpl(obj, reference, error) 
             % Implement MIMO FxLMS algorithm. 
        
             % Update state vector of adaptive filter and estimated sec path filter

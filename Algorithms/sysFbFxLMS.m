@@ -1,5 +1,6 @@
 classdef sysFbFxLMS < matlab.System
-    % SYSFBFXLMS Add summary here
+    % SYSFBFXLMS System object implementation of adaptive feedback FxLMS
+    % algorithm. This system object supports a SISO setup.
     
     % Public, tunable properties
     properties
@@ -11,9 +12,9 @@ classdef sysFbFxLMS < matlab.System
         numSpk = 1;
 
         % adaptive filter tuning
-        stepsize   = 0.01; % adaptive filter stepsize
+        stepsize   = 0.01;  % adaptive filter stepsize
         leakage    = 0.001; % adaptive filter leakage
-        normweight = 1; % weight for stepsize normalization factor
+        normweight = 1;     % weight for stepsize normalization factor
         smoothing  = 0.999; % exponential smoothing constant
         
         % switches

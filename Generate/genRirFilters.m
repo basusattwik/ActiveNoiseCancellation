@@ -1,6 +1,6 @@
 function imp = genRirFilters(params, bNorm)
-%GENRIRFILTERS Summary of this function goes here
-%   Detailed explanation goes here
+%GENRIRFILTERS Function to setup system objects to simulate the primary,
+%reference and secondary path acoustics
 
 if nargin < 2
     bNorm = false;
