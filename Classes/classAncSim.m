@@ -16,7 +16,10 @@ classdef classAncSim
                            'sources', [], ...
                            'refMics', [], ...
                            'errMics', [], ...
-                           'speakers', []);
+                           'speakers', [], ...
+                           'bSimheadphones', [], ...
+                           'lpfCutoff', [], ...
+                           'lpfOrder',  []);
 
         % System impulse responses for all acoustic paths
         paths = struct('priPathFilters', [], ...
@@ -45,8 +48,8 @@ classdef classAncSim
         reference;
         output;
 
-        % Check for feedback
-        bFeedback = false;
+        % Simulate LPF effect of headphones
+        bSimheadphones = false;
     end
 
     methods
@@ -54,7 +57,7 @@ classdef classAncSim
             %CLASSANCSIM Construct an instance of this class
             %   Detailed explanation goes here
 
-            load(filePath, 'ancSimInput');
+            load(filePath, 'ancSimInput'); % TODO: Add checks to make sure file exists. 
 
             disp('Starting simulation ...');
             disp(['Speakers: ',   num2str(ancSimInput.config.numSpk), ', ', ...
@@ -75,6 +78,9 @@ classdef classAncSim
             obj.acoustics.refMics  = ancSimInput.acoustics.refMics;
             obj.acoustics.errMics  = ancSimInput.acoustics.errMics;
             obj.acoustics.speakers = ancSimInput.acoustics.speakers;
+            obj.acoustics.bSimheadphones = ancSimInput.acoustics.bSimheadphones;
+            obj.acoustics.lpfCutoff = ancSimInput.acoustics.lpfCutoff;
+            obj.acoustics.lpfOrder  = ancSimInput.acoustics.lpfOrder;
             
             % All IRs
             obj.paths.priPathFilters = ancSimInput.priPathFilters;
@@ -84,21 +90,50 @@ classdef classAncSim
             % Input signals (sources)
             obj.signals.noise   = ancSimInput.noiseSource;
             obj.signals.simTime = ancSimInput.simTime;
-
         end
 
         function obj = setupSystemObj(obj, ancAlgo, ancAlgoTune)
             %SETUPSYSTEMObj
 
             % Setup ANC Algorithm
-            obj.ancAlgo = ancAlgo('numRef',     obj.config.numRef, ...
-                                  'numErr',     obj.config.numErr, ...
-                                  'numSpk',     obj.config.numSpk, ...
-                                  'stepsize',   ancAlgoTune.step,  ...
-                                  'leakage',    ancAlgoTune.leak,  ...
-                                  'normweight', ancAlgoTune.normweight, ...
-                                  'smoothing',  ancAlgoTune.smoothing, ...
-                                  'filterLen',  ancAlgoTune.filterLen);
+            if strcmpi(func2str(ancAlgo), 'sysFxLMS')
+
+                obj.ancAlgo = ancAlgo('numRef',     obj.config.numRef, ...
+                                      'numErr',     obj.config.numErr, ...
+                                      'numSpk',     obj.config.numSpk, ...
+                                      'stepsize',   ancAlgoTune.ffstep,  ...
+                                      'leakage',    ancAlgoTune.ffleak,  ...
+                                      'normweight', ancAlgoTune.ffnormweight, ...
+                                      'smoothing',  ancAlgoTune.ffsmoothing, ...
+                                      'filterLen',  ancAlgoTune.fffilterLen);
+
+            elseif strcmpi(func2str(ancAlgo), 'sysFbFxLMS')
+
+                obj.ancAlgo = ancAlgo('numRef',     obj.config.numRef, ...
+                                      'numErr',     obj.config.numErr, ...
+                                      'numSpk',     obj.config.numSpk, ...
+                                      'stepsize',   ancAlgoTune.fbstep,  ...
+                                      'leakage',    ancAlgoTune.fbleak,  ...
+                                      'normweight', ancAlgoTune.fbnormweight, ...
+                                      'smoothing',  ancAlgoTune.fbsmoothing, ...
+                                      'filterLen',  ancAlgoTune.fbfilterLen);
+
+            elseif strcmpi(func2str(ancAlgo), 'sysHybridFxLMS')
+                
+                obj.ancAlgo = ancAlgo('numRef',       obj.config.numRef, ...
+                                      'numErr',       obj.config.numErr, ...
+                                      'numSpk',       obj.config.numSpk, ...
+                                      'ffstepsize',   ancAlgoTune.ffstep,  ...
+                                      'ffleakage',    ancAlgoTune.ffleak,  ...
+                                      'ffnormweight', ancAlgoTune.ffnormweight, ...
+                                      'ffsmoothing',  ancAlgoTune.ffsmoothing, ...
+                                      'fffilterLen',  ancAlgoTune.fffilterLen, ...
+                                      'fbstepsize',   ancAlgoTune.fbstep,  ...
+                                      'fbleakage',    ancAlgoTune.fbleak,  ...
+                                      'fbnormweight', ancAlgoTune.fbnormweight, ...
+                                      'fbsmoothing',  ancAlgoTune.fbsmoothing, ...
+                                      'fbfilterLen',  ancAlgoTune.fbfilterLen);
+            end
 
             % Setup Multi-channel convolvers
             obj.priPath = sysMimoConv('numMic',   obj.config.numErr, ...
@@ -185,24 +220,33 @@ classdef classAncSim
             wbar = waitbar(0, 'Please wait', 'Name','ANC Simulation...',...
                            'CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
 
+            % Setup filter to simulate headphones
+            if obj.acoustics.bSimheadphones
+                [b, a]   = butter(obj.acoustics.lpfOrder, obj.acoustics.lpfCutoff / (0.5 * obj.config.fs), 'low');
+                lpfState = [];
+            end
+
             blockInd = 1:obj.config.blockLen;
             noise = obj.signals.noise;
             for i = 1:obj.signals.simTime * obj.config.fs
         
                 % Simulate primary noise
                 obj.primary = obj.priPath.step(noise(blockInd, :));
+
+                % Add a LPF to primary noise simulate headphones
+                if obj.acoustics.bSimheadphones
+                    [obj.primary, lpfState] = filter(b, a, obj.primary, lpfState);
+                end
             
                 % Calc error i.e. residual noise
                 obj.error = obj.primary - obj.antinoise;
             
+                % Call ANC algorithm step function
                 if ~obj.ancAlgo.bFeedback
-                    % Simulate reference path acoustics
-                    obj.reference = obj.refPath.step(noise(blockInd, :));
-
-                    % Call ANC algorithm step function
-                    obj.output = obj.ancAlgo.step(obj.reference, obj.error); 
+                    obj.reference = obj.refPath.step(noise(blockInd, :)); % Simulate reference path acoustics
+                    obj.output    = obj.ancAlgo.step(obj.error, obj.reference);
                 else
-                    obj.output = obj.ancAlgo.step(obj.error); 
+                    obj.output = obj.ancAlgo.step(obj.error, obj.output); 
                 end
             
                 % Simulate secondary path acoustics
@@ -249,6 +293,8 @@ classdef classAncSim
             if nargin < 5
                 bCopy = false;
             end
+
+            disp(['ANC Algorithm: ', func2str(ancAlgo)]);
             
             disp('--- Setting up the algorithms');
             obj = obj.setupSystemObj(ancAlgo, ancAlgoTune);
