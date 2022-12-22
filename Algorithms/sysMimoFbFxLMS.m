@@ -1,5 +1,5 @@
 classdef sysMimoFbFxLMS < matlab.System
-    % SYSMIMOFXLMS System object implementation of adaptive feedback FxLMS
+    % SYSMIMOFBFXLMS System object implementation of adaptive feedback FxLMS
     % algorithm. This system object supports a MIMO setup.
     
     % Public, tunable properties
@@ -67,13 +67,18 @@ classdef sysMimoFbFxLMS < matlab.System
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             obj.estSecPathCoeff2 = obj.estSecPathCoeff;
+
+            % Note that references are synthesized, so they are equal to
+            % numErr
+            obj.numRef = obj.numErr;
         end
 
         function output = stepImpl(obj, error, output) 
-            % Implement MIMO FxLMS algorithm. 
+            % Implement MIMO Feedback FxLMS algorithm. 
        
             % Get estimated antinoise at the error microphones
             obj.estSecPathState2 = [output; obj.estSecPathState2(1:end-1, :)];
+            obj.estAntinoise(:)  = 0; % clear out previous values
             for mic = 1:obj.numErr
                 for spk = 1:obj.numSpk
                     obj.estAntinoise(1, mic) = obj.estAntinoise(1, mic) + squeeze(obj.estSecPathCoeff2(spk, mic, :)).' * obj.estSecPathState2(:, spk);

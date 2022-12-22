@@ -248,7 +248,7 @@ classdef classAncSim
                     obj.reference = obj.refPath.step(noise(blockInd, :)); 
 
                     % Call FF or Hybrid ANC algorithm step function
-                    obj.output    = obj.ancAlgo.step(obj.error, obj.reference);
+                    obj.output = obj.ancAlgo.step(obj.error, obj.reference);
                 else
                     % Call FB ANC algorithm step function
                     obj.output = obj.ancAlgo.step(obj.error, obj.output); 
