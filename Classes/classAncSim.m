@@ -47,9 +47,6 @@ classdef classAncSim
         antinoise;
         reference;
         output;
-
-        % Simulate LPF effect of headphones
-        bSimheadphones = false;
     end
 
     methods
@@ -235,7 +232,7 @@ classdef classAncSim
 
                 % Add a LPF to primary noise simulate headphones
                 if obj.acoustics.bSimheadphones
-                    [obj.primary, lpfState] = filter(b, a, obj.primary, lpfState);
+                    [obj.primary, lpfState] = filter(b, a, obj.primary, lpfState, 1);
                 end
             
                 % Calc error i.e. residual noise
