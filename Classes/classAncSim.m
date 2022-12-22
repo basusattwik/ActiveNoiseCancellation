@@ -1,6 +1,9 @@
 classdef classAncSim
-    %CLASSANCSIM Summary of this class goes here
-    %   Detailed explanation goes here
+    %CLASSANCSIM Class to manage all the components of running a simulation
+    %   This class handles setup of all algorithm system objects, measuring
+    %   secondary path and simulating active noise cancellation. 
+    %   The required inputs are a simulation input .mat file and algorithm
+    %   tuning.
 
     properties
         % System configuration
@@ -8,7 +11,7 @@ classdef classAncSim
                         'numRef', 1, ...
                         'numErr', 1, ...
                         'numSpk', 1, ...
-                        'blockLen', 1, ... % ToDo: this is unused now.
+                        'blockLen', 1, ... % ToDo: this is unused at the moment.
                         'fs', 8000);  
         
         % Acoustic properties
@@ -51,8 +54,10 @@ classdef classAncSim
 
     methods
         function obj = classAncSim(filePath)
-            %CLASSANCSIM Construct an instance of this class
-            %   Detailed explanation goes here
+            %CLASSANCSIM Constructor to initialize all simulation
+            %componentss
+            %   Loads the input .mat file and assigns appropriate values to
+            %   class properties. 
 
             load(filePath, 'ancSimInput'); % TODO: Add checks to make sure file exists. 
 
@@ -75,9 +80,9 @@ classdef classAncSim
             obj.acoustics.refMics  = ancSimInput.acoustics.refMics;
             obj.acoustics.errMics  = ancSimInput.acoustics.errMics;
             obj.acoustics.speakers = ancSimInput.acoustics.speakers;
-            obj.acoustics.bSimheadphones = ancSimInput.acoustics.bSimheadphones;
             obj.acoustics.lpfCutoff = ancSimInput.acoustics.lpfCutoff;
             obj.acoustics.lpfOrder  = ancSimInput.acoustics.lpfOrder;
+            obj.acoustics.bSimheadphones = ancSimInput.acoustics.bSimheadphones;
             
             % All IRs
             obj.paths.priPathFilters = ancSimInput.priPathFilters;
@@ -132,7 +137,7 @@ classdef classAncSim
                                       'fbfilterLen',  ancAlgoTune.fbfilterLen);
             end
 
-            % Setup Multi-channel convolvers
+            % Setup Multi-channel convolvers to simulate various acoustic paths
             obj.priPath = sysMimoConv('numMic',   obj.config.numErr, ...
                                       'numSrc',   obj.config.numSrc, ...
                                       'blockLen', obj.config.blockLen, ...
@@ -161,7 +166,7 @@ classdef classAncSim
         end
 
             function obj = measureIr(obj, msrIrTune, bCopy)
-            %MEASUREIR
+            %MEASUREIR Estimate secondary path IRs using Farina's method 
 
             switch bCopy
 
@@ -202,7 +207,7 @@ classdef classAncSim
         end
 
         function [obj, simData] = ancSimCore(obj)
-            %ANCSIMCORE
+            %ANCSIMCORE Main processing of the ANC simulation
 
             % Preallocate arrays
             totalSamples = obj.signals.simTime * obj.config.fs;
@@ -238,11 +243,14 @@ classdef classAncSim
                 % Calc error i.e. residual noise
                 obj.error = obj.primary - obj.antinoise;
             
-                % Call ANC algorithm step function
                 if ~obj.ancAlgo.bFeedback
-                    obj.reference = obj.refPath.step(noise(blockInd, :)); % Simulate reference path acoustics
+                    % Simulate reference path acoustics
+                    obj.reference = obj.refPath.step(noise(blockInd, :)); 
+
+                    % Call FF or Hybrid ANC algorithm step function
                     obj.output    = obj.ancAlgo.step(obj.error, obj.reference);
                 else
+                    % Call FB ANC algorithm step function
                     obj.output = obj.ancAlgo.step(obj.error, obj.output); 
                 end
             
@@ -285,7 +293,8 @@ classdef classAncSim
         end
 
         function [obj, simData] = runAncSim(obj, ancAlgo, ancAlgoTune, msrIrTune, bCopy)
-            %RUNANCSIM
+            %RUNANCSIM Helper function to organize the sequence of events
+            %leading up to a full simulation run.
 
             if nargin < 5
                 bCopy = false;

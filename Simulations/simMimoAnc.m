@@ -1,3 +1,18 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-------------------------------------------------------------
+% This is the main script for running any ANC simulation
+% User has to: 
+%   1. choose an input .mat file by providing path
+%   2. choose an adaptive algorithm (using a function handle)
+%
+% Required toolboxes:
+%   1. DSP System
+%   2. Signal Processing
+%   3. Audio
+%%-------------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 close all
 clearvars
 clc
@@ -23,10 +38,13 @@ anc = classAncSim(simInput);
 
 %% Generate plots
 
+% Setup class for plotting
 plt = classAncPlots(simData);
+
+% Call function to produce plots
 plt.genAllPlots();
 
-%% Close out
+%% Close out sim
 
 release(anc.ancAlgo);
 anc = []; 

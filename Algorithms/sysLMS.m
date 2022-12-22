@@ -1,5 +1,6 @@
 classdef sysLMS < matlab.System
-    % SYSLMS Add summary here
+    % SYSLMS System object implementation of adaptive LMS algorithm. 
+    % This system object supports a MIMO setup.
 
     % Public, tunable properties
     properties

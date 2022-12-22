@@ -1,6 +1,5 @@
 classdef classAncPlots < handle
-    %CLASSANCPLOTS Summary of this class goes here
-    %   Detailed explanation goes here
+    %CLASSANCPLOTS Class to handle plot generation for analysis.
 
     properties
 

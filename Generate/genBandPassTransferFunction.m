@@ -1,6 +1,6 @@
 function [coeffs] = genBandPassTransferFunction(N, flow, fhigh, delay, Ast, ford, fs)
-%GENBANDPASSTRANSFERFUNCTION Summary of this function goes here
-%   Detailed explanation goes here
+%GENBANDPASSTRANSFERFUNCTION Generate a simple impulse response using
+%bandpass filtered random noise.
 
 % Design bandpass filter to generate bandlimited impulse response
 specs  = fdesign.bandpass('N,Fst1,Fst2,Ast', ford, flow, fhigh, Ast, fs);
