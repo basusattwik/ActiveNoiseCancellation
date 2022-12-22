@@ -34,9 +34,9 @@ numErr = size(errMics,  1);  % Number of error mics
 noise  = zeros(simTime * fs, numSrc);
 
 % % Source 1
-f   = [80, 150];%, 200, 250, 300];
-amp = [0.1, 0.08];%, 0.07, 0.065, 0.06];
-phs = [0, 0];%, 0, 0, 0];
+f   = [80, 150, 200, 250, 300];
+amp = [0.1, 0.08, 0.07, 0.065, 0.06];
+phs = [0, 0, 0, 0, 0];
 
 noise(:, 1) = imag(complexsin(fs, f, amp, phs, simTime));
 

@@ -22,7 +22,7 @@ classdef sysFxLMS < matlab.System
 
     % Public, non-tunable properties
     properties(Nontunable)
-        filterLen(1, 1){mustBePositive, mustBeInteger} = 512;        % adaptive filter length
+        filterLen(1, 1){mustBePositive, mustBeInteger} = 512;           % adaptive filter length
         estSecPathFilterLen(1, 1){mustBePositive, mustBeInteger} = 512; % estimated secondary path filter length
     end
 
@@ -58,7 +58,7 @@ classdef sysFxLMS < matlab.System
     methods(Access = protected)
         %% Common functions
 
-        function output = stepImpl(obj, ref, error) % inputs should be ref and err
+        function output = stepImpl(obj, error, ref) % inputs should be ref and err
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states.
         

@@ -43,7 +43,6 @@ classdef sysFbFxLMS < matlab.System
         estSecPathState2; % used for estimating the primary noise
         filtRefState;
         estPriNoise;
-        prevOutput;
         powRefHist; % smoothed power of reference signal
     end
 
@@ -68,12 +67,12 @@ classdef sysFbFxLMS < matlab.System
             obj.estSecPathCoeff2 = obj.estSecPathCoeff;
         end
         
-        function output = stepImpl(obj, error) % inputs should be ref and err
+        function output = stepImpl(obj, error, output) % inputs should be ref and err
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states.
 
             % Get estimated primary noise
-            obj.estSecPathState2 = [obj.prevOutput; obj.estSecPathState2(1:end-1, 1)];
+            obj.estSecPathState2 = [output; obj.estSecPathState2(1:end-1, 1)];
             obj.estPriNoise = error + squeeze(obj.estSecPathCoeff2).' * obj.estSecPathState2;
         
             % Update state vector of adaptive filter and filtered reference signal
@@ -96,7 +95,6 @@ classdef sysFbFxLMS < matlab.System
 
             % Get output signal
             output = obj.filterCoeff.' * obj.filterState;
-            obj.prevOutput = output;
         end 
 
         function resetImpl(obj)
@@ -107,7 +105,6 @@ classdef sysFbFxLMS < matlab.System
             obj.estSecPathState  = zeros(obj.estSecPathFilterLen, 1); 
             obj.estSecPathState2 = zeros(obj.estSecPathFilterLen, 1);
             obj.estPriNoise = 0;
-            obj.prevOutput  = 0;
             obj.powRefHist  = 0; % smoothed power of reference signal
         end
     end

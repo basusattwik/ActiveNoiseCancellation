@@ -8,7 +8,7 @@ clc
 simInput = '/Users/sattwikbasu/Repos/ActiveNoiseCancellation/Data/Input/MATFiles/ancSimInput.mat';
 
 % Choose Algorithm
-ancAlgo = @sysFbFxLMS;
+ancAlgo = @sysHybridFxLMS;
 
 %% Run algorithm
 
