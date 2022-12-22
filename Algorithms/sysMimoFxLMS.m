@@ -60,7 +60,7 @@ classdef sysMimoFxLMS < matlab.System
     methods(Access = protected)
         %% Common functions
 
-        function output = stepImpl(obj, reference, error) 
+        function output = stepImpl(obj, error, reference) 
             % Implement MIMO FxLMS algorithm. 
        
             % Update state vector of adaptive filter and estimated sec path filter
