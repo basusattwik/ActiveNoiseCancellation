@@ -7,19 +7,19 @@ ancAlgoTune.ffstep = 0.15;
 ancAlgoTune.ffleak = 0.000001;
 ancAlgoTune.ffnormweight = 0.001;
 ancAlgoTune.ffsmoothing  = 0.997;
-ancAlgoTune.fffilterLen  = 300;
+ancAlgoTune.fffilterLen  = 512;
 
 % For Feedback FxLMS for ANC
 ancAlgoTune.fbstep = 0.15;
 ancAlgoTune.fbleak = 0.000001;
 ancAlgoTune.fbnormweight = 0.001;
 ancAlgoTune.fbsmoothing  = 0.997;
-ancAlgoTune.fbfilterLen  = 300;
+ancAlgoTune.fbfilterLen  = 512;
 
 % Setup for IR measurement
 msrIrTune.lowFreq  = 20; % Hz
 msrIrTune.swpTime  = 2;  % sec
 msrIrTune.silnTime = 1;  % sec
-msrIrTune.filtLen  = 300;
+msrIrTune.filtLen  = 512;
 
 end

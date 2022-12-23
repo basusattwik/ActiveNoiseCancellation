@@ -11,7 +11,7 @@ clc
 %% Simulation setup
 
 % Sampling Rate
-fs = 6000;
+fs = 3000;
 
 % Acoustic properties
 roomDim    = [5, 5, 6];                                           % Room dimensions    [x y z] (m)
@@ -156,7 +156,7 @@ save([folderName, '/ancSimInput.mat'], "ancSimInput");
 % fftLen = 1024;
 % df  = fs / fftLen;  % frequency spacing
 % fx  = 0:df:fs/2;  % frequency axis
-% 
+
 % % Primary paths
 % priPathFftMag = zeros(numSrc, numErr, fftLen/2+1);
 % priPathFftPhs = zeros(numSrc, numErr, fftLen/2+1);
@@ -183,7 +183,7 @@ save([folderName, '/ancSimInput.mat'], "ancSimInput");
 % end
 % refPathFftMag(:, :, 2:end-1) = 2 * refPathFftMag(:, :, 2:end-1); % Correct mag for one sided view
 % 
-% % Secondary paths
+% Secondary paths
 % secPathFftMag = zeros(numSpk, numErr, fftLen/2+1);
 % secPathFftPhs = zeros(numSrc, numErr, fftLen/2+1);
 % for spk = 1:numSpk

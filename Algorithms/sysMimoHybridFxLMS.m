@@ -8,11 +8,10 @@ classdef sysMimoHybridFxLMS < matlab.System
     % Public, tunable properties
     properties
 
-        % system setup (NOTE: These are unused. They are there only for
-        % compatibility with the constructors of MIMO algorithms)
-        numRef = 1;
-        numErr = 1;
-        numSpk = 1;
+        % system setup
+        numRef = 2;
+        numErr = 2;
+        numSpk = 2;
         
         % adaptive filter tuning
         ffstepsize   = 0.01;  % adaptive filter stepsize
