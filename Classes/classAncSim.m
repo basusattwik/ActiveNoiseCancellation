@@ -98,7 +98,7 @@ classdef classAncSim
             %SETUPSYSTEMObj
 
             % Setup ANC Algorithm
-            if strcmpi(func2str(ancAlgo), 'sysFxLMS')
+            if strcmpi(func2str(ancAlgo), 'sysFxLMS') || strcmpi(func2str(ancAlgo), 'sysMimoFxLMS')
 
                 obj.ancAlgo = ancAlgo('numRef',     obj.config.numRef, ...
                                       'numErr',     obj.config.numErr, ...
@@ -109,7 +109,7 @@ classdef classAncSim
                                       'smoothing',  ancAlgoTune.ffsmoothing, ...
                                       'filterLen',  ancAlgoTune.fffilterLen);
 
-            elseif strcmpi(func2str(ancAlgo), 'sysFbFxLMS')
+            elseif strcmpi(func2str(ancAlgo), 'sysFbFxLMS') || strcmpi(func2str(ancAlgo), 'sysMimoFbFxLMS')
 
                 obj.ancAlgo = ancAlgo('numRef',     obj.config.numRef, ...
                                       'numErr',     obj.config.numErr, ...
@@ -120,7 +120,7 @@ classdef classAncSim
                                       'smoothing',  ancAlgoTune.fbsmoothing, ...
                                       'filterLen',  ancAlgoTune.fbfilterLen);
 
-            elseif strcmpi(func2str(ancAlgo), 'sysHybridFxLMS')
+            elseif strcmpi(func2str(ancAlgo), 'sysHybridFxLMS')  || strcmpi(func2str(ancAlgo), 'sysMimoHybridFxLMS')
                 
                 obj.ancAlgo = ancAlgo('numRef',       obj.config.numRef, ...
                                       'numErr',       obj.config.numErr, ...
@@ -248,7 +248,7 @@ classdef classAncSim
                     obj.reference = obj.refPath.step(noise(blockInd, :)); 
 
                     % Call FF or Hybrid ANC algorithm step function
-                    obj.output    = obj.ancAlgo.step(obj.error, obj.reference);
+                    obj.output = obj.ancAlgo.step(obj.error, obj.reference);
                 else
                     % Call FB ANC algorithm step function
                     obj.output = obj.ancAlgo.step(obj.error, obj.output); 

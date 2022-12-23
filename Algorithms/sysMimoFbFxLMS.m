@@ -1,5 +1,5 @@
-classdef sysMimoFxLMS < matlab.System
-    % SYSMIMOFXLMS System object implementation of adaptive feedforward FxLMS
+classdef sysMimoFbFxLMS < matlab.System
+    % SYSMIMOFBFXLMS System object implementation of adaptive feedback FxLMS
     % algorithm. This system object supports a MIMO setup.
     
     % Public, tunable properties
@@ -29,19 +29,23 @@ classdef sysMimoFxLMS < matlab.System
 
     % Public, non-tunable properties
     properties(Nontunable)
-        estSecPathCoeff = [];
+        estSecPathCoeff  = [];
+        estSecPathCoeff2 = [];
         
         % Feedback architecture
-        bFeedback = false;
+        bFeedback = true;
     end
 
     properties(DiscreteState)
-        filterCoeff;     % adaptive FIR filter coefficients
-        filterState;     % buffered reference signal        
-        gradient;        % gradient vector per ref x spk
-        estSecPathState; % buffered reference signal for sec path filter
-        filtRefState;    % buffered sec path filtered reference signal
-        powRefHist;      % smoothed power of reference signal
+        filterCoeff;      % adaptive FIR filter coefficients
+        filterState;      % buffered reference signal        
+        gradient;         % gradient vector per ref x spk
+        estSecPathState;  % buffered reference signal for sec path filter
+        estSecPathState2; % used for estimating the primary noise
+        filtRefState;     % buffered sec path filtered reference signal
+        estPriNoise;      % estimated primary noise, used to generated reference
+        estAntinoise;     % estimated antinoise at the error microphones
+        powRefHist;       % smoothed power of reference signal
     end
 
     % Pre-computed constants
@@ -51,7 +55,7 @@ classdef sysMimoFxLMS < matlab.System
 
     methods
         % Constructor
-        function obj = sysMimoFxLMS(varargin)
+        function obj = sysMimoFbFxLMS(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:})
         end
@@ -60,12 +64,33 @@ classdef sysMimoFxLMS < matlab.System
     methods(Access = protected)
         %% Common functions
 
-        function output = stepImpl(obj, error, reference) 
-            % Implement MIMO FxLMS algorithm. 
+        function setupImpl(obj)
+            % Perform one-time calculations, such as computing constants
+            obj.estSecPathCoeff2 = obj.estSecPathCoeff;
+
+            % Note that references are synthesized, so they are equal to
+            % numErr
+            obj.numRef = obj.numErr;
+        end
+
+        function output = stepImpl(obj, error, output) 
+            % Implement MIMO Feedback FxLMS algorithm. 
        
+            % Get estimated antinoise at the error microphones
+            obj.estSecPathState2 = [output; obj.estSecPathState2(1:end-1, :)];
+            obj.estAntinoise(:)  = 0; % clear out previous values
+            for mic = 1:obj.numErr
+                for spk = 1:obj.numSpk
+                    obj.estAntinoise(1, mic) = obj.estAntinoise(1, mic) + squeeze(obj.estSecPathCoeff2(spk, mic, :)).' * obj.estSecPathState2(:, spk);
+                end
+            end
+
+            % Get estimated primary noise
+            obj.estPriNoise = error + obj.estAntinoise;
+
             % Update state vector of adaptive filter and estimated sec path filter
-            obj.estSecPathState = [reference ; obj.estSecPathState(1:end-1, :)]; 
-            obj.filterState     = [reference ; obj.filterState(1:end-1, :)];
+            obj.estSecPathState = [obj.estPriNoise ; obj.estSecPathState(1:end-1, :)]; 
+            obj.filterState     = [obj.estPriNoise ; obj.filterState(1:end-1, :)];
             
             for ref = 1:obj.numRef             
                 for spk = 1:obj.numSpk           
@@ -112,12 +137,15 @@ classdef sysMimoFxLMS < matlab.System
 
         function resetImpl(obj)
             % Initialize / reset discrete-state properties
-            obj.filterCoeff     = zeros(obj.filterLen, obj.numRef, obj.numSpk);       % adaptive FIR filter coefficients ref x spk
-            obj.filterState     = zeros(obj.filterLen, obj.numRef);                   % buffered reference signal
-            obj.gradient        = zeros(obj.filterLen, obj.numRef, obj.numSpk);       % gradient vector ref x spk
-            obj.filtRefState    = zeros(obj.filterLen, obj.numRef, obj.numSpk, obj.numErr); % buffered sec path filtered reference signal
-            obj.estSecPathState = zeros(obj.estSecPathFilterLen, obj.numRef);         % buffered reference signal for sec path filter
-            obj.powRefHist      = zeros(obj.numRef, obj.numSpk, obj.numErr);          % smoothed power of reference signal
+            obj.filterCoeff      = zeros(obj.filterLen, obj.numRef, obj.numSpk);       % adaptive FIR filter coefficients ref x spk
+            obj.filterState      = zeros(obj.filterLen, obj.numRef);                   % buffered reference signal
+            obj.gradient         = zeros(obj.filterLen, obj.numRef, obj.numSpk);       % gradient vector ref x spk
+            obj.filtRefState     = zeros(obj.filterLen, obj.numRef, obj.numSpk, obj.numErr); % buffered sec path filtered reference signal
+            obj.estSecPathState  = zeros(obj.estSecPathFilterLen, obj.numRef);         % buffered reference signal for sec path filter
+            obj.estSecPathState2 = zeros(obj.estSecPathFilterLen, obj.numSpk);         % buffered output signal for sec path filter
+            obj.estPriNoise  = zeros(1, obj.numErr);                                   % estimated primary noise at the error mics
+            obj.estAntinoise = zeros(1, obj.numErr);                                   % estimated antinoise at the error mics
+            obj.powRefHist   = zeros(obj.numRef, obj.numSpk, obj.numErr);              % smoothed power of reference signal
         end
 
     end

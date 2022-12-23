@@ -13,7 +13,7 @@
 %%-------------------------------------------------------------
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-close all
+close all force
 clearvars
 clc
 
@@ -23,7 +23,7 @@ clc
 simInput = '/Users/sattwikbasu/Repos/ActiveNoiseCancellation/Data/Input/MATFiles/ancSimInput.mat';
 
 % Choose Algorithm (look at the Algorithms folder for the correct names)
-ancAlgo = @sysHybridFxLMS;
+ancAlgo = @sysMimoHybridFxLMS;
 
 %% Run algorithm
 
