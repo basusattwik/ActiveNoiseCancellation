@@ -170,7 +170,7 @@ classdef classAncSim
 
             switch bCopy
 
-                case true % Copy coefficients from secondary path IR model
+                case true % Copy coefficients from secondary path IR 
 
                     for spk = 1:obj.config.numSpk
                         for err = 1:obj.config.numErr
@@ -179,7 +179,7 @@ classdef classAncSim
                     end
                     obj.ancAlgo.estSecPathFilterLen = msrIrTune.filtLen;
 
-                case false % Measure IR using LMS 
+                case false % Measure IR
 
                     % Generate sine sweep
                     swp = sweeptone(msrIrTune.swpTime, msrIrTune.silnTime, obj.config.fs, 'SweepFrequencyRange', [msrIrTune.lowFreq, obj.config.fs/2]);
