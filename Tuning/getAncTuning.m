@@ -3,18 +3,18 @@ function [ancAlgoTune, msrIrTune] = getAncTuning()
 %ANC algorithms and secondary path IR measurement techniques. 
 
 % For Feedforward FxLMS for ANC
-ancAlgoTune.ffstep = 0.15;
-ancAlgoTune.ffleak = 0.000001;
+ancAlgoTune.ffstep = 0.2;
+ancAlgoTune.ffleak = 0.0001;
 ancAlgoTune.ffnormweight = 0.001;
 ancAlgoTune.ffsmoothing  = 0.997;
-ancAlgoTune.fffilterLen  = 512;
+ancAlgoTune.fffilterLen  = 1024;
 
 % For Feedback FxLMS for ANC
 ancAlgoTune.fbstep = 0.15;
 ancAlgoTune.fbleak = 0.000001;
 ancAlgoTune.fbnormweight = 0.001;
 ancAlgoTune.fbsmoothing  = 0.997;
-ancAlgoTune.fbfilterLen  = 512;
+ancAlgoTune.fbfilterLen  = 1024;
 
 % Setup for IR measurement
 msrIrTune.lowFreq  = 20; % Hz

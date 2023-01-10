@@ -93,7 +93,7 @@ classdef sysMimoFxLMS < matlab.System
         
                         % Update filter coefficients
                         obj.filterCoeff(:, ref, spk) = obj.filterCoeff(:, ref, spk) * (1 - normstepsize * obj.leakage) ...
-                                                                       + normstepsize * obj.gradient(:, ref, spk);
+                                                                                         + normstepsize * obj.gradient(:, ref, spk);
                     end
                 end % spk loop
             end % ref loop

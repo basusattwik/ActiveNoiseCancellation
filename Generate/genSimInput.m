@@ -25,7 +25,7 @@ reverbTime = 0.4;                                                 % Reverberatio
 simTime    = 10; 
 
 % Simulate headphones with a LPF
-bSimheadphones = true;
+bSimheadphones = false;
 lpfCutoff = 800; % Hz
 lpfOrder  = 8;
 

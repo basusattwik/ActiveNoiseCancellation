@@ -72,14 +72,14 @@ classdef classAncSim
             obj.config.numRef = ancSimInput.config.numRef;
             obj.config.numErr = ancSimInput.config.numErr;
             obj.config.numSpk = ancSimInput.config.numSpk;
-            obj.config.fs = ancSimInput.config.fs;
+            obj.config.fs     = ancSimInput.config.fs;
             
             % Acoustic config
-            obj.acoustics.roomDim  = ancSimInput.acoustics.roomDim;
-            obj.acoustics.sources  = ancSimInput.acoustics.sources;
-            obj.acoustics.refMics  = ancSimInput.acoustics.refMics;
-            obj.acoustics.errMics  = ancSimInput.acoustics.errMics;
-            obj.acoustics.speakers = ancSimInput.acoustics.speakers;
+            obj.acoustics.roomDim   = ancSimInput.acoustics.roomDim;
+            obj.acoustics.sources   = ancSimInput.acoustics.sources;
+            obj.acoustics.refMics   = ancSimInput.acoustics.refMics;
+            obj.acoustics.errMics   = ancSimInput.acoustics.errMics;
+            obj.acoustics.speakers  = ancSimInput.acoustics.speakers;
             obj.acoustics.lpfCutoff = ancSimInput.acoustics.lpfCutoff;
             obj.acoustics.lpfOrder  = ancSimInput.acoustics.lpfOrder;
             obj.acoustics.bSimheadphones = ancSimInput.acoustics.bSimheadphones;

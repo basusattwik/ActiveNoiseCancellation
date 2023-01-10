@@ -118,7 +118,7 @@ classdef sysMimoFbFxLMS < matlab.System
         
                         % Update filter coefficients
                         obj.filterCoeff(:, ref, spk) = obj.filterCoeff(:, ref, spk) * (1 - normstepsize * obj.leakage) ...
-                                                                       + normstepsize * obj.gradient(:, ref, spk);
+                                                                                         + normstepsize * obj.gradient(:, ref, spk);
                     end
                 end % spk loop
             end % ref loop
@@ -143,9 +143,9 @@ classdef sysMimoFbFxLMS < matlab.System
             obj.filtRefState     = zeros(obj.filterLen, obj.numRef, obj.numSpk, obj.numErr); % buffered sec path filtered reference signal
             obj.estSecPathState  = zeros(obj.estSecPathFilterLen, obj.numRef);         % buffered reference signal for sec path filter
             obj.estSecPathState2 = zeros(obj.estSecPathFilterLen, obj.numSpk);         % buffered output signal for sec path filter
-            obj.estPriNoise  = zeros(1, obj.numErr);                                   % estimated primary noise at the error mics
-            obj.estAntinoise = zeros(1, obj.numErr);                                   % estimated antinoise at the error mics
-            obj.powRefHist   = zeros(obj.numRef, obj.numSpk, obj.numErr);              % smoothed power of reference signal
+            obj.estPriNoise      = zeros(1, obj.numErr);                               % estimated primary noise at the error mics
+            obj.estAntinoise     = zeros(1, obj.numErr);                               % estimated antinoise at the error mics
+            obj.powRefHist       = zeros(obj.numRef, obj.numSpk, obj.numErr);          % smoothed power of reference signal
         end
 
     end
