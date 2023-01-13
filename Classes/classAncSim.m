@@ -219,7 +219,7 @@ classdef classAncSim
             simData.saveOutput    = zeros(totalSamples, obj.config.numSpk);
 
             % Wait bar
-            wbar = waitbar(0, 'Please wait', 'Name','ANC Simulation...',...
+            wbar = waitbar(0, 'Please wait', 'Name','Running Simulation...',...
                            'CreateCancelBtn','setappdata(gcbf,''canceling'',1)');
 
             % Setup filter to simulate headphones
