@@ -23,7 +23,7 @@ if ~isempty(app.priPath)
     for src = 1:app.numSrc
         for err = 1:app.numErr
             h = app.priPath.filt{src, err}.Numerator;
-            H = fft(h, fftLen) / fftLen;
+            H = fft(h, fftLen) / numel(h);
             app.priPath.mag(src, err, :) = abs(H(1:fftLen/2+1));
             app.priPath.phs(src, err, :) = angle(H(1:fftLen/2+1));
         end
@@ -36,7 +36,7 @@ if ~isempty(app.refPath)
     for src = 1:app.numSrc
         for ref = 1:app.numRef
             h = app.refPath.filt{src, ref}.Numerator;
-            H = fft(h, fftLen) / fftLen;
+            H = fft(h, fftLen) / numel(h);
             app.refPath.mag(src, ref, :) = abs(H(1:fftLen/2+1));
             app.refPath.phs(src, ref, :) = angle(H(1:fftLen/2+1));
         end
@@ -49,7 +49,7 @@ if ~isempty(app.secPath)
     for spk = 1:app.numSpk
         for err = 1:app.numErr
             h = app.secPath.filt{spk, err}.Numerator;
-            H = fft(h, fftLen) / fftLen;
+            H = fft(h, fftLen) / numel(h);
             app.secPath.mag(spk, err, :) = abs(H(1:fftLen/2+1));
             app.secPath.phs(spk, err, :) = angle(H(1:fftLen/2+1));
         end

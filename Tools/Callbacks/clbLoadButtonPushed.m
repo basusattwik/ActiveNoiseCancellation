@@ -5,6 +5,8 @@ function app = clbLoadButtonPushed(app)
 [file, path] = uigetfile;
 load(fullfile(path, file), 'ancSimInput');
 
+uiDisplayStatus(app, 'Loading...', [0.64,0.08,0.18]); % red color
+
 % Initialize app class properties
 fcnInitProperties(app, ancSimInput);
 
