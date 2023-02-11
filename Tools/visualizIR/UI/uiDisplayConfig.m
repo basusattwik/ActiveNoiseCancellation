@@ -7,6 +7,7 @@ app.RefEditField.Value   = num2str(app.numRef);
 app.SrcEditField.Value   = num2str(app.numSrc);
 app.SpkEditField.Value   = num2str(app.numSpk);
 app.fsEditField.Value    = num2str(app.fs);
+app.TapsEditField.Value  = num2str(app.numTaps);
 
 end
 

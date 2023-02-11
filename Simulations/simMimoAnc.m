@@ -1,4 +1,3 @@
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%-------------------------------------------------------------
 % This is the main script for running any ANC simulation
@@ -20,10 +19,10 @@ clc
 %% Choose simulation scenario and ANC algorithm
 
 % Choose simulation input file
-simInput = '/Users/sattwikbasu/Repos/ActiveNoiseCancellation/Data/Input/MATFiles/ancSimInput.mat';
+simInput = '/Users/sattwikbasu/Repos/ActiveNoiseCancellation/Data/Input/MATFiles/ancSimInput_oneSource.mat';
 
 % Choose Algorithm (look at the Algorithms folder for the correct names)
-ancAlgo = @sysMimoHybridFxLMS;
+ancAlgo = @sysFxLMS;
 
 %% Run algorithm
 
