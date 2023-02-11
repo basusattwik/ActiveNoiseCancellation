@@ -102,7 +102,7 @@ classdef sysFbFxLMS < matlab.System
             % Initialize / reset discrete-state properties
             obj.filterCoeff      = zeros(obj.filterLen, 1); % adaptive FIR filter coefficients
             obj.filterState      = zeros(obj.filterLen, 1); % buffered reference signal
-            obj.filtRefState     = zeros(obj.estSecPathFilterLen, 1);
+            obj.filtRefState     = zeros(obj.filterLen, 1);
             obj.estSecPathState  = zeros(obj.estSecPathFilterLen, 1); 
             obj.estSecPathState2 = zeros(obj.estSecPathFilterLen, 1);
             obj.estPriNoise = 0;
