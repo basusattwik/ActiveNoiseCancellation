@@ -2,12 +2,13 @@ function app = clbLoadButtonPushed(app)
 %CALLBACKLOADBUTTONPUSHED Load simulation input mat files and save struct
 %to the app
 
-[file, path] = uigetfile;
+[file, path] = uigetfile([pwd '/Data/Input/MATFiles']);
 if file ~= 0 % protect if user hits cancel/close
     load(fullfile(path, file), 'ancSimInput');
 else
     return;
 end
+figure(app.visualizIRUIFigure); % Hack to bring app UI to front
 
 uiDisplayStatus(app, 'Loading...', [0.64,0.08,0.18]); % red color
 

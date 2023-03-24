@@ -11,13 +11,13 @@ rng('default');
 x = 0.1 * randn(audioLen, 1);
 
 % Create bandpass filter
-ord = 128;
+ord = 1024;
 lcf = 1000; 
 hcf = 3000;
 h   = fir1(ord, [lcf hcf] ./ (0.5 * fs));
 
 xfilt = filter(h, 1, x);
-d     = 0 * audio + xfilt;
+d     = 0.5 * audio + xfilt;
 
 %% Run adaptive filter
 
@@ -28,7 +28,7 @@ lms = sysLMS('numSpk',     1, ...
              'leakage',    0.00001, ...
              'normweight', 10, ...
              'smoothing',  0.997, ...
-             'filterLen',  ord + 1,...
+             'filterLen',  128,...
              'bfreezecoeffs', false);
 
 % Preallocate memory
@@ -73,12 +73,23 @@ subplot(4, 1, 4)
     title('Original Audio');
 
 figure(2)
-stem(h); hold on;
-stem(w);
-xlabel('sample'); ylabel('amplitude');
+subplot(2, 1, 1)
+    stem(h); %hold on;
+    xlabel('sample'); ylabel('amplitude');
+    grid on; grid minor;
+    title('Impulse Response Coeffs');
+subplot(2, 1, 2)
+    stem(w);
+    xlabel('sample'); ylabel('amplitude');
+    grid on; grid minor;
+    title('Adaptive Filter Coeffs');
+
+[r, l] = xcorr(xfilt, x, 'normalized');
+figure(3)
+stem(l, r, '.');
 grid on; grid minor;
-title('Impulse Response Coeffs');
-legend('Actual', 'Adaptive');
+xlabel('Lags (samples');
+ylabel('Cross-corr');
 
 %% Close
 reset(lms);

@@ -18,7 +18,7 @@ clc
 
 %% Choose simulation scenario and ANC algorithm
 
-% Choose simulation input file
+% Choose simulation input .mat file
 simInput = '/Users/sattwikbasu/Repos/ActiveNoiseCancellation/Data/Input/MATFiles/ancSimInput_oneSource.mat';
 
 % Choose Algorithm (look at the Algorithms folder for the correct names)
@@ -37,7 +37,7 @@ anc = classAncSim(simInput);
 
 %% Generate plots
 
-% Setup class for plotting
+% Setup class for plottingf
 plt = classAncPlots(simData);
 
 % Call function to produce plots

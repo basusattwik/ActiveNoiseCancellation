@@ -26,7 +26,7 @@ if nargin > 12
     error('Too many input arguments');
 end
 if nargin < 12
-    hpf = [];
+    hpf = true;
 end
 if nargin < 11
     micorient = [];

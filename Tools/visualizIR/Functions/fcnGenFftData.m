@@ -26,11 +26,10 @@ if ~isempty(app.priPath)
     for src = 1:app.numSrc
         for err = 1:app.numErr
             h = app.priPath.filt{src, err}.Numerator;
-            H = fft(h, fftLen) / numel(h);
-            g = grpdelay(h, 1, fftLen);
+            H = freqz(h, 1, fftLen, "whole");
             app.priPath.mag(src, err, :) = abs(H(1:fftLen/2+1));
             app.priPath.phs(src, err, :) = angle(H(1:fftLen/2+1));
-            app.priPath.grd(src, err, :) = g(1:fftLen/2+1);
+            app.priPath.grd(src, err, :) = grpdelay(h, 1, fftLen/2+1);
         end
     end
     app.priPath.mag(:, :, 2:end-1) = 2 * app.priPath.mag(:, :, 2:end-1); % Correct mag for one sided view
@@ -41,7 +40,7 @@ if ~isempty(app.refPath)
     for src = 1:app.numSrc
         for ref = 1:app.numRef
             h = app.refPath.filt{src, ref}.Numerator;
-            H = fft(h, fftLen) / numel(h);
+            H = freqz(h, 1, fftLen, "whole");
             app.refPath.mag(src, ref, :) = abs(H(1:fftLen/2+1));
             app.refPath.phs(src, ref, :) = angle(H(1:fftLen/2+1));
             app.refPath.grd(src, ref, :) = grpdelay(h, 1, fftLen/2+1);
@@ -55,7 +54,7 @@ if ~isempty(app.secPath)
     for spk = 1:app.numSpk
         for err = 1:app.numErr
             h = app.secPath.filt{spk, err}.Numerator;
-            H = fft(h, fftLen) / numel(h);
+            H = freqz(h, 1, fftLen, "whole");
             app.secPath.mag(spk, err, :) = abs(H(1:fftLen/2+1));
             app.secPath.phs(spk, err, :) = angle(H(1:fftLen/2+1));
             app.secPath.grd(spk, err, :) = grpdelay(h, 1, fftLen/2+1);
