@@ -1,6 +1,6 @@
-function [yn] = optimalWienerFilter(xn, sn, fs, winDur)
-%UNTITLED2 Summary of this function goes here
-%   Detailed explanation goes here
+function [yn] = wienerFilter(xn, sn, fs, winDur)
+%WIENERFILTER Frequency domain implementation of the optimal Wiener
+%filter
 
 sigLen  = length(xn);
 winLen  = fix(winDur * fs); % 20 ms

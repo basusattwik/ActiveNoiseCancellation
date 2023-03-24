@@ -21,7 +21,7 @@ xn = sn + wn;
 
 %% Wiener filter
 
-yn = optimalWienerFilter(xn, sn, fs, 0.020);
+yn = wienerFilter(xn, sn, fs, 0.020);
 
 %% Plots
 
