@@ -1,10 +1,10 @@
-function [yn] = wienerFilter(xn, sn, fs, winDur)
+function [yn] = wienerFilter(xn, vn, fs, winDur, alpha)
 %WIENERFILTER Frequency domain implementation of the optimal Wiener
 %filter
 
 sigLen  = length(xn);
 winLen  = fix(winDur * fs); % 20 ms
-fftLen  = 2^nextpow2(winLen);
+fftLen  = winLen; %2^nextpow2(winLen);
 overlap = winLen / 2;
 
 window = hann(winLen, 'periodic');
@@ -16,26 +16,28 @@ numWin = fix((sigLen - overlap) / hopLen);
 % preallocate memory
 yn = zeros((numWin - 1) * hopLen + winLen, 1); % reconstructed filtered signal
 nf = zeros((numWin - 1) * hopLen + winLen, 1); % normalization factor
+Sxv = zeros(fftLen, 1);
+Sxx = zeros(fftLen, 1);
 
 ind = 1:winLen;
 for n = 1:numWin
     
     % Break signal into frames and apply window
     xwin  = window .* xn(ind);
-    swin  = window .* sn(ind);
+    vwin  = window .* vn(ind);
 
     % Compute PSD and CPSD
     Xw = fft(xwin, fftLen);
-    Sw = fft(swin, fftLen) ;
+    Vw = fft(vwin, fftLen) ;
 
-    Sxx = Xw .* conj(Xw);
-    Sxs = Xw .* conj(Sw);
+    Sxx = alpha * Sxx + (1-alpha) * (Xw .* conj(Xw));
+    Sxv = alpha * Sxv + (1-alpha) * (Xw .* conj(Vw));
 
     % Get the Wiener filter
-    Wopt = Sxs ./ Sxx;
+    Hopt = Sxv ./ Sxx;
 
     % Filter signal
-    ytmp = real(ifft(Wopt .* Xw, fftLen));
+    ytmp = real(ifft(Hopt .* Xw, fftLen));
     ytmp = ytmp(1:winLen);
 
     % Overlap add

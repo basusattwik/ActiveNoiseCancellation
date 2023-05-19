@@ -33,7 +33,7 @@ classdef sysMimoConv < matlab.System
     methods(Access = protected)
         %% Common functions
         function xout = stepImpl(obj, xin)
-            % Implement multichannel convolutionn algorithm. 
+            % Implement multichannel convolution algorithm. 
             obj.output(:) = 0;
             for mic = 1:obj.numMic
                 for src = 1:obj.numSrc

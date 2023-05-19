@@ -45,7 +45,7 @@ noise  = zeros(simTime * fs, numSrc);
 % 
 % noise(:, 1) = imag(complexsin(fs, f, amp, phs, simTime));
 h = fir1(64, 300/(0.5 * fs));
-noise(:, 1) = 0.6 * filter(h, 1, rand(simTime * fs, 1));
+noise(:, 1) = 0.6 * filter(h, 1, randBetween([simTime * fs, 1], -1, 1));
 
 % Add other sources below:
 % You can also add .wav files
@@ -57,15 +57,15 @@ noise(:, 1) = 0.6 * filter(h, 1, rand(simTime * fs, 1));
 % 
 % noise(:, 2) = real(complexsin(fs, f, amp, phs, simTime));
 h = fir1(64, 300/(0.5 * fs));
-noise(:, 2) = 0.6 * filter(h, 1, rand(simTime * fs, 1));
+noise(:, 2) = 0.6 * filter(h, 1, randBetween([simTime * fs, 1], -1, 1));
 
 % Source 3
 h = fir1(64, 200/(0.5 * fs));
-noise(:, 3) = 0.6 * filter(h, 1, rand(simTime * fs, 1));
+noise(:, 3) = 0.6 * filter(h, 1, randBetween([simTime * fs, 1], -1, 1));
 
 % Source 4
 h = fir1(64, 800/(0.5 * fs));
-noise(:, 4) = 0.1 * filter(h, 1, rand(simTime * fs, 1));
+noise(:, 4) = 0.1 * filter(h, 1, randBetween([simTime * fs, 1], -1, 1));
 
 % Source 5
 [cry, cryFs] = audioread('Input/Signals/noise_train.wav');

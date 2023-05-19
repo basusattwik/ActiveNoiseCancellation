@@ -2,6 +2,9 @@ close all
 clearvars
 clc
 
+% Example for applying an Optimal Wiener filter for a simple speech
+% enhancement task
+
 %% Create signals
 
 % Load speech recording
@@ -21,11 +24,13 @@ xn = sn + wn;
 
 %% Wiener filter
 
-yn = wienerFilter(xn, sn, fs, 0.020);
+yn = wienerFilter(xn, sn, fs, 0.020, 0.001);
 
 %% Plots
 
 winLen  = fix(0.020 * fs); % 20 ms
+overlap = winLen / 2;
+fftLen  = winLen * 2;
 tx = 0:1/fs:length(yn)/fs-1/fs;
 
 figure(1)
@@ -44,4 +49,4 @@ ax2 = subplot(2,1,2);
 linkaxes([ax1, ax2], 'xy');
 
 figure(4)
-getStft([xn(1:length(yn)), yn], fs, winLen, winType, overlap, fftLen);
+getStft([xn(1:length(yn)), yn], fs, winLen, 'hann', overlap, fftLen);

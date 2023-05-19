@@ -182,7 +182,8 @@ classdef classAncSim
                 case false % Measure IR
 
                     % Generate sine sweep
-                    swp = sweeptone(msrIrTune.swpTime, msrIrTune.silnTime, obj.config.fs, 'SweepFrequencyRange', [msrIrTune.lowFreq, obj.config.fs/2]);
+                    swp = sweeptone(msrIrTune.swpTime, msrIrTune.silnTime, obj.config.fs, 'SweepFrequencyRange', ...
+                                    [msrIrTune.lowFreq, obj.config.fs/2]);
 
                     for spk = 1:obj.config.numSpk
                         for err = 1:obj.config.numErr
