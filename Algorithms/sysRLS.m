@@ -1,4 +1,4 @@
-classdef sysLMS < matlab.System
+classdef sysRLS < matlab.System
     % SYSLMS System object implementation of adaptive LMS algorithm. 
     % This system object supports a MIMO setup.
 
@@ -9,11 +9,10 @@ classdef sysLMS < matlab.System
         numSpk = 1;
         numErr = 1;
 
-        % adaptive filter tuning
-        stepsize   = 0.01;  % adaptive filter stepsize
-        leakage    = 0.001; % adaptive filter leakage
-        normweight = 1;     % weight for stepsize normalization factor
-        smoothing  = 0.999; % exponential smoothing constant
+        % constants
+        stepsize = 1.0;
+        lambda   = 0.99; % forgetting factor
+        delta    = 1.0;  % initialization for P matrix
         
         % switches
         bfreezecoeffs(1, 1)logical = false; % bool to freeze coeffients
@@ -30,17 +29,18 @@ classdef sysLMS < matlab.System
         states; % buffered reference signal
         error;  % error signal
         output; % output of each adaptive filter
-        powrefhist; % smoothed power of reference signal
+        gain;   % gain vector
+        P;      % inverse correlation matrix
     end
 
     % Pre-computed constants
     properties(Access = private)
-        % None
+        lambdainv;
     end
 
     methods
         % Constructor
-        function obj = sysLMS(varargin)
+        function obj = sysRLS(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:})
         end
@@ -48,6 +48,11 @@ classdef sysLMS < matlab.System
 
     methods(Access = protected)
         %% Common functions
+
+        function setupImpl(obj)
+            % Perform one-time calculations, such as computing constants
+            obj.lambdainv = 1 / obj.lambda;
+        end
 
         function stepImpl(obj, ref, des)
             % Implement algorithm. Calculate y as a function of input u and
@@ -63,7 +68,7 @@ classdef sysLMS < matlab.System
                 end
             end
 
-            % Run LMS update
+            % Run RLS update
             for mic = 1:obj.numErr
 
                 % Get error signal: desired - output % ToDo: Can move to outer loop
@@ -71,14 +76,17 @@ classdef sysLMS < matlab.System
 
                 for spk = 1:obj.numSpk
 
-                % Get normalized stepsize
-                obj.powrefhist(1, spk) = obj.smoothing * sum(obj.states(:, spk).^2) + (1 - obj.smoothing) * obj.powrefhist(1, spk);
-                normstepsize = obj.stepsize / (1 + obj.normweight * obj.powrefhist(1, spk)); % This can be optimized to avoid divides
+                % Update the gain vector
+                Px = squeeze(obj.P(spk, mic, :, :)) * obj.states(:, spk); % Calculate P * x for optimization
+                obj.gain(spk, mic, :) = Px / (obj.lambda + obj.states(:, spk).' * Px);
+
+                % Update the inverse correlation matrix
+                obj.P(spk, mic, :, :) = obj.lambdainv * (squeeze(obj.P(spk, mic, :, :)) - ...
+                                                         squeeze(obj.gain(spk, mic, :)) * obj.states(:, spk).' * squeeze(obj.P(spk, mic, :, :)));
                       
-                % Update filter coefficients using leaky LMS
+                % Update filter coefficients using RLSc
                 if ~obj.bfreezecoeffs
-                    obj.coeffs(spk, mic, :) = squeeze(obj.coeffs(spk, mic, :)) * (1 - normstepsize * obj.leakage) ...
-                                                                                    + normstepsize * obj.error(1, mic) * obj.states(:, spk);
+                    obj.coeffs(spk, mic, :) = squeeze(obj.coeffs(spk, mic, :)) + obj.stepsize * obj.error(1, mic) * squeeze(obj.gain(spk, mic, :));
                 end
 
                 end % spk loop
@@ -91,7 +99,15 @@ classdef sysLMS < matlab.System
             obj.coeffs = zeros(obj.numSpk, obj.numErr, obj.filterLen);
             obj.error  = zeros(1, obj.numErr);
             obj.output = zeros(obj.numErr, obj.numSpk);
-            obj.powrefhist = zeros(1, obj.numSpk);
+            obj.gain   = zeros(obj.numSpk, obj.numErr, obj.filterLen);
+
+            obj.P = zeros(obj.numSpk, obj.numErr, obj.filterLen, obj.filterLen); 
+            for spk = 1:obj.numSpk
+                for mic = 1:obj.numErr
+                    obj.P(spk, mic, :, :) = obj.delta * eye(obj.filterLen, obj.filterLen);
+                end
+            end
+
         end
     end
 end
