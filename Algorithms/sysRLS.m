@@ -1,5 +1,5 @@
 classdef sysRLS < matlab.System
-    % SYSLMS System object implementation of adaptive LMS algorithm. 
+    % SYSLMS System object implementation of adaptive RLS algorithm. 
     % This system object supports a MIMO setup.
 
     % Public, tunable properties
@@ -88,9 +88,9 @@ classdef sysRLS < matlab.System
                     % Update the inverse correlation matrix
                     obj.P(spk, mic, :, :) = obj.lambdainv * (Pmat - squeeze(obj.gain(spk, mic, :)) * xt * Pmat);
                           
-                    % Update filter coefficients using RLSc
+                    % Update filter coefficients using RLS
                     if ~obj.bfreezecoeffs
-                        obj.coeffs(spk, mic, :) = squeeze(obj.coeffs(spk, mic, :)) + obj.stepsize * obj.error(1, mic) * squeeze(obj.gain(spk, mic, :));
+                        obj.coeffs(spk, mic, :) = obj.coeffs(spk, mic, :) + obj.stepsize * obj.error(1, mic) * obj.gain(spk, mic, :);
                     end
 
                 end % spk loop
