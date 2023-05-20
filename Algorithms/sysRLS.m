@@ -63,8 +63,8 @@ classdef sysRLS < matlab.System
 
             % Get output signals
             for mic = 1:obj.numErr
-                for spk = 1:obj.numSpk
-                    obj.output(mic, spk) = squeeze(obj.coeffs(spk, mic, :)).' * obj.states(:, spk);                
+                for spk = 1:obj.numSpk 
+                    obj.output(mic, spk) = obj.states(:, spk).' * reshape(obj.coeffs(spk, mic, :), [obj.filterLen, 1]); 
                 end
             end
 
@@ -76,17 +76,18 @@ classdef sysRLS < matlab.System
 
                 for spk = 1:obj.numSpk
 
-                    % Cache some params for optimization
-                    Pmat = squeeze(obj.P(spk, mic, :, :));
+                    % --- Cache some arrays for optimization ---
+                    Pmat = reshape(obj.P(spk, mic, :, :), [obj.filterLen, obj.filterLen]);
                     x    = obj.states(:, spk);
                     xt   = x.';
                     Px   = Pmat * x; 
+                    % ------------------------------------------
     
                     % Update the gain vector
                     obj.gain(spk, mic, :) = Px / (obj.lambda + xt * Px);
     
                     % Update the inverse correlation matrix
-                    obj.P(spk, mic, :, :) = obj.lambdainv * (Pmat - squeeze(obj.gain(spk, mic, :)) * xt * Pmat);
+                    obj.P(spk, mic, :, :) = obj.lambdainv * (Pmat - reshape(obj.gain(spk, mic, :), [obj.filterLen, 1]) * xt * Pmat);
                           
                     % Update filter coefficients using RLS
                     if ~obj.bfreezecoeffs

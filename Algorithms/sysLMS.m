@@ -59,7 +59,7 @@ classdef sysLMS < matlab.System
             % Get output signals
             for mic = 1:obj.numErr
                 for spk = 1:obj.numSpk
-                    obj.output(mic, spk) = squeeze(obj.coeffs(spk, mic, :)).' * obj.states(:, spk);                
+                    obj.output(mic, spk) = obj.states(:, spk).' * reshape(obj.coeffs(spk, mic, :), [obj.filterLen, 1]);                
                 end
             end
 
@@ -77,7 +77,7 @@ classdef sysLMS < matlab.System
                       
                 % Update filter coefficients using leaky LMS
                 if ~obj.bfreezecoeffs
-                    obj.coeffs(spk, mic, :) = squeeze(obj.coeffs(spk, mic, :)) * (1 - normstepsize * obj.leakage) ...
+                    obj.coeffs(spk, mic, :) = reshape(obj.coeffs(spk, mic, :), [obj.filterLen, 1]) * (1 - normstepsize * obj.leakage) ...
                                                                                     + normstepsize * obj.error(1, mic) * obj.states(:, spk);
                 end
 
