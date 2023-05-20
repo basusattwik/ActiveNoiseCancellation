@@ -4,20 +4,25 @@ close all; clearvars; clc
 
 % load audio
 [audio, fs] = audioread('Data/Music/pop.wav');
-audioLen    = length(audio);
+
+% Decimate
+fsD    = fs/2;
+[P, Q] = rat(fsD / fs);
+audioDeci = resample(audio, P, Q);
+audioLen  = length(audioDeci);
 
 % Create random noise
 rng('default');
-x = 0.1 * randn(audioLen, 1);
+x = 0.2 * randn(audioLen, 1);
 
 % Create bandpass filter
-ord = 1024;
+ord = 128;
 lcf = 1000; 
 hcf = 3000;
-h   = fir1(ord, [lcf hcf] ./ (0.5 * fs));
+h   = fir1(ord, [lcf hcf] ./ (0.5 * fsD));
 
 xfilt = filter(h, 1, x);
-d     = 0.5 * audio + xfilt;
+d     = 0.0 * audioDeci + xfilt;
 
 %% Run adaptive filter
 
@@ -44,7 +49,7 @@ end
 w = squeeze(lms.coeffs);
 
 %% Generate plots
-tx = 0:1/fs:audioLen/fs-1/fs;
+tx = 0:1/fsD:audioLen/fsD-1/fsD;
 
 figure(1)
 subplot(4, 1, 1)
@@ -66,7 +71,7 @@ subplot(4, 1, 3)
     ylabel('Amplitude');
     title('Error i.e. Filtered Audio');
 subplot(4, 1, 4)
-    plot(tx, audio);
+    plot(tx, audioDeci);
     grid on; grid minor;
     xlabel('time (s)');
     ylabel('Amplitude');
@@ -88,7 +93,7 @@ subplot(2, 1, 2)
 figure(3)
 stem(l, r, '.');
 grid on; grid minor;
-xlabel('Lags (samples');
+xlabel('Lags (samples)');
 ylabel('Cross-corr');
 
 %% Close
