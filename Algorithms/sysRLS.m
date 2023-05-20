@@ -12,7 +12,7 @@ classdef sysRLS < matlab.System
         % constants
         stepsize = 1.0;
         lambda   = 0.99; % forgetting factor
-        delta    = 1.0;  % initialization for P matrix
+        delta    = 0.01; % initialization for P matrix
         
         % switches
         bfreezecoeffs(1, 1)logical = false; % bool to freeze coeffients
@@ -76,18 +76,22 @@ classdef sysRLS < matlab.System
 
                 for spk = 1:obj.numSpk
 
-                % Update the gain vector
-                Px = squeeze(obj.P(spk, mic, :, :)) * obj.states(:, spk); % Calculate P * x for optimization
-                obj.gain(spk, mic, :) = Px / (obj.lambda + obj.states(:, spk).' * Px);
-
-                % Update the inverse correlation matrix
-                obj.P(spk, mic, :, :) = obj.lambdainv * (squeeze(obj.P(spk, mic, :, :)) - ...
-                                                         squeeze(obj.gain(spk, mic, :)) * obj.states(:, spk).' * squeeze(obj.P(spk, mic, :, :)));
-                      
-                % Update filter coefficients using RLSc
-                if ~obj.bfreezecoeffs
-                    obj.coeffs(spk, mic, :) = squeeze(obj.coeffs(spk, mic, :)) + obj.stepsize * obj.error(1, mic) * squeeze(obj.gain(spk, mic, :));
-                end
+                    % Cache some params for optimization
+                    Pmat = squeeze(obj.P(spk, mic, :, :));
+                    x    = obj.states(:, spk);
+                    xt   = x.';
+                    Px   = Pmat * x; 
+    
+                    % Update the gain vector
+                    obj.gain(spk, mic, :) = Px / (obj.lambda + xt * Px);
+    
+                    % Update the inverse correlation matrix
+                    obj.P(spk, mic, :, :) = obj.lambdainv * (Pmat - squeeze(obj.gain(spk, mic, :)) * xt * Pmat);
+                          
+                    % Update filter coefficients using RLSc
+                    if ~obj.bfreezecoeffs
+                        obj.coeffs(spk, mic, :) = squeeze(obj.coeffs(spk, mic, :)) + obj.stepsize * obj.error(1, mic) * squeeze(obj.gain(spk, mic, :));
+                    end
 
                 end % spk loop
             end % mic loop

@@ -11,7 +11,7 @@ rng('default');
 x = 0.1 * randn(audioLen, 1);
 
 % Create bandpass filter
-ord = 1024;
+ord = 128;
 lcf = 1000; 
 hcf = 3000;
 h   = fir1(ord, [lcf hcf] ./ (0.5 * fs));
