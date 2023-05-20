@@ -66,7 +66,7 @@ classdef sysLMS < matlab.System
             % Run LMS update
             for mic = 1:obj.numErr
 
-                % Get error signal: desired - output % ToDo: Can move to outer loop
+                % Get error signal: desired - output
                 obj.error(1, mic) = des(1, mic) - sum(obj.output(mic, :));
 
                 for spk = 1:obj.numSpk
