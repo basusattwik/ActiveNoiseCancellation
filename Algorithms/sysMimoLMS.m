@@ -1,4 +1,4 @@
-classdef sysLMS < matlab.System
+classdef sysMimoLMS < matlab.System
     % SYSLMS System object implementation of adaptive LMS algorithm. 
     % This system object supports a MIMO setup.
 
@@ -40,7 +40,7 @@ classdef sysLMS < matlab.System
 
     methods
         % Constructor
-        function obj = sysLMS(varargin)
+        function obj = sysMimoLMS(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:})
         end

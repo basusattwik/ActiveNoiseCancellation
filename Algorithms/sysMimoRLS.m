@@ -1,5 +1,5 @@
-classdef sysRLS < matlab.System
-    % SYSLMS System object implementation of adaptive RLS algorithm. 
+classdef sysMimoRLS < matlab.System
+    % SYSLMS System object implementation of a multichannel adaptive RLS algorithm. 
     % This system object supports a MIMO setup.
 
     % Public, tunable properties
@@ -40,7 +40,7 @@ classdef sysRLS < matlab.System
 
     methods
         % Constructor
-        function obj = sysRLS(varargin)
+        function obj = sysMimoRLS(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:})
         end
